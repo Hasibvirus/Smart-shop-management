@@ -1,0 +1,1337 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Smart Shop Manager</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@500;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: phone app with a bottom tab bar (ড্যাশবোর্ড, বিক্রি, পণ্য, লেনদেন, আরও).
+   Visual idea: a shop's stock register. Deep register-green for brand, orange only for warnings, red only for money owed. */
+:root {
+  --bg: #F1F4F2;
+  --surface: #FFFFFF;
+  --ink: #14231E;
+  --muted: #586A63;
+  --line: #DAE3DE;
+  --brand: #0E5A48;
+  --on-brand: #F1FBF7;
+  --brand-soft: #DDF0E8;
+  --warn: #B3470F;
+  --warn-bg: #FCE9DC;
+  --bad: #B3261E;
+  --bad-bg: #FBE6E4;
+  --good: #17784F;
+  --good-bg: #E1F3EA;
+  --focus: #1D5FA8;
+  --font-display: 'Anek Bangla', 'Hind Siliguri', 'Noto Sans Bengali', system-ui, sans-serif;
+  --font-body: 'Hind Siliguri', 'Noto Sans Bengali', 'Kalpurush', system-ui, sans-serif;
+  --fs-xs: 0.75rem; --fs-sm: 0.875rem; --fs-base: 1rem; --fs-lg: 1.25rem; --fs-xl: 1.625rem; --fs-2xl: 2.25rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1411; --surface: #141F1B; --ink: #E7F0EB; --muted: #96A9A1; --line: #24342E;
+    --brand: #2FA583; --on-brand: #04140E; --brand-soft: #173128;
+    --warn: #F2A06B; --warn-bg: #3A2517; --bad: #FF8A82; --bad-bg: #3A1C1B;
+    --good: #58D39B; --good-bg: #16322A; --focus: #7DB6F0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1411; --surface: #141F1B; --ink: #E7F0EB; --muted: #96A9A1; --line: #24342E;
+  --brand: #2FA583; --on-brand: #04140E; --brand-soft: #173128;
+  --warn: #F2A06B; --warn-bg: #3A2517; --bad: #FF8A82; --bad-bg: #3A1C1B;
+  --good: #58D39B; --good-bg: #16322A; --focus: #7DB6F0;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: var(--fs-base); line-height: 1.55;
+  padding-block: 12px 108px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-text-size-adjust: 100%; font-variant-numeric: tabular-nums;
+}
+h1, h2, h3, p, ul { margin: 0; } ul { padding: 0; list-style: none; }
+h2 { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 800; line-height: 1.3; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-size: var(--fs-base); font-weight: 700; }
+button { font-family: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.note { font-size: var(--fs-sm); color: var(--muted); }
+.wrap { max-width: 600px; margin: 0 auto; display: grid; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.ok { color: var(--good); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+
+/* headers */
+.top { display: flex; align-items: center; gap: 12px; min-height: 48px; }
+.logo { width: 44px; height: 44px; border-radius: 10px; background: var(--brand); color: var(--on-brand); display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: var(--fs-lg); overflow: hidden; flex: none; }
+.logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.top .t { min-width: 0; flex: 1; display: grid; }
+.top .t b { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.top .t small { color: var(--muted); font-size: var(--fs-sm); }
+.sub-top { display: flex; align-items: center; gap: 4px; min-height: 48px; }
+.sub-top h1 { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 800; flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
+.back { width: 44px; height: 44px; border: 0; background: transparent; color: var(--ink); display: grid; place-items: center; cursor: pointer; border-radius: 10px; flex: none; margin-left: -10px; }
+.back svg, .navbtn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+/* controls */
+.field { min-width: 0; display: grid; gap: 4px; }
+.field label { font-size: var(--fs-sm); color: var(--muted); }
+.field input, .field select, .field textarea {
+  width: 100%; min-width: 0; height: 48px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 1.0625rem; font-weight: 500;
+}
+.field textarea { height: auto; padding: 10px 12px; font-size: 0.9375rem; line-height: 1.5; resize: vertical; }
+.field input[type="date"] { font-size: 1rem; }
+.row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.btn { min-height: 48px; border: 0; border-radius: 10px; background: var(--brand); color: var(--on-brand); font-size: var(--fs-base); font-weight: 700; cursor: pointer; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; text-align: center; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.dark { background: var(--ink); color: var(--bg); }
+.btn.danger { color: var(--bad); }
+.btn.small { min-height: 40px; padding: 0 12px; font-size: var(--fs-sm); }
+.btnrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.seg button { border: 0; background: transparent; color: var(--muted); height: 40px; border-radius: 8px; font-size: 0.9375rem; font-weight: 600; cursor: pointer; padding: 0 6px; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.chip { flex: none; border: 1px solid var(--line); background: var(--surface); color: var(--muted); height: 36px; padding: 0 14px; border-radius: 999px; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tag { display: inline-block; font-size: 0.6875rem; font-weight: 700; padding: 0 7px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.tag.low { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.tag.due { background: var(--bad-bg); color: var(--bad); border-color: transparent; }
+.err { color: var(--bad); font-weight: 600; font-size: var(--fs-sm); }
+.banner { background: var(--surface); border: 1px dashed var(--muted); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; font-size: var(--fs-sm); }
+.banner.warnb { border: 1px solid transparent; background: var(--warn-bg); color: var(--warn); border-style: solid; }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; text-align: left; color: var(--ink); display: grid; align-content: start; gap: 0; }
+button.kpi { cursor: pointer; }
+.kpi .l { font-size: var(--fs-xs); color: var(--muted); }
+.kpi .v { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.kpi .s { font-size: var(--fs-xs); color: var(--muted); }
+.kpi.hero { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.kpi.hero .l, .kpi.hero .s { color: var(--on-brand); opacity: 0.85; }
+
+/* lists */
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.list-h { padding: 12px 14px; font-family: var(--font-display); font-weight: 700; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.row { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; padding: 11px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left; min-height: 56px; }
+button.row { cursor: pointer; }
+.row:last-child { border-bottom: 0; }
+.row .m { min-width: 0; display: grid; }
+.row .m b { font-weight: 600; overflow-wrap: anywhere; }
+.row .m small { color: var(--muted); font-size: var(--fs-xs); overflow-wrap: anywhere; }
+.row .r { text-align: right; font-family: var(--font-display); font-weight: 800; }
+.row .r small { display: block; font-family: var(--font-body); font-weight: 500; font-size: var(--fs-xs); color: var(--muted); }
+.row.void .m b, .row.void .r { text-decoration: line-through; color: var(--muted); }
+.empty { padding: 24px 16px; text-align: center; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
+.strip { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* charts */
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 170px; }
+.bcol { flex: 1; min-width: 0; height: 100%; display: grid; grid-template-rows: 1fr auto auto; justify-items: center; gap: 3px; }
+.bcol .bar { align-self: end; width: 72%; max-width: 40px; min-height: 2px; background: var(--brand); border-radius: 4px 4px 0 0; }
+.bcol.hi .bar { background: var(--warn); }
+.bcol .bv { font-size: 0.6875rem; font-weight: 700; white-space: nowrap; }
+.bcol .bl { font-size: 0.6875rem; color: var(--muted); white-space: nowrap; }
+.tbl { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+th, td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; }
+th { color: var(--muted); font-weight: 600; font-size: var(--fs-xs); }
+
+/* health */
+.ring { position: relative; width: 132px; height: 132px; flex: none; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .n { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 2.25rem; line-height: 1; }
+.ring .n small { font-family: var(--font-body); font-weight: 500; font-size: var(--fs-xs); color: var(--muted); }
+.healthtop { display: flex; gap: 16px; align-items: center; }
+.meter { height: 8px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--brand); }
+.part { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.part:last-child { border-bottom: 0; }
+.part .h { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
+
+/* cart */
+.item { display: grid; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.item .h { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+.item .h b { font-weight: 600; overflow-wrap: anywhere; }
+.item .ctl { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+.stepper { display: grid; grid-template-columns: 44px 64px 44px; gap: 4px; }
+.stepper button { height: 44px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; font-size: 1.25rem; cursor: pointer; }
+.stepper input { height: 44px; min-width: 0; width: 100%; text-align: center; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font-size: 1rem; font-family: var(--font-body); }
+.x { border: 0; background: transparent; color: var(--muted); font-size: var(--fs-sm); text-decoration: underline; cursor: pointer; min-height: 36px; padding: 0 4px; }
+.sumrow { display: flex; justify-content: space-between; gap: 12px; }
+.sumrow.big { font-family: var(--font-display); font-weight: 800; font-size: var(--fs-lg); }
+.pick { display: flex; flex-wrap: wrap; gap: 8px; }
+.pick button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 10px; padding: 8px 12px; text-align: left; cursor: pointer; min-height: 48px; display: grid; }
+.pick button small { color: var(--muted); font-size: var(--fs-xs); }
+
+/* tab bar and sheets */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line);
+  padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
+.tabbar-in { max-width: 600px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
+.navbtn { position: relative; border: 0; background: transparent; color: var(--muted); display: grid; justify-items: center; gap: 1px; padding: 6px 0; border-radius: 10px; cursor: pointer; font-size: 0.6875rem; font-weight: 600; font-family: var(--font-body); }
+.navbtn[aria-current="page"] { color: var(--brand); background: var(--brand-soft); }
+.navbtn .bd { position: absolute; top: 2px; left: 50%; margin-left: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--warn); color: var(--bg); font-size: 0.6875rem; line-height: 18px; text-align: center; font-weight: 700; }
+.fab { position: fixed; z-index: 19; height: 52px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--brand); color: var(--on-brand); font-size: var(--fs-base); font-weight: 700; cursor: pointer;
+  right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(76px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 6px 18px rgba(0,0,0,0.28); }
+.scrim { position: fixed; inset: 0; z-index: 40; background: rgba(5, 10, 8, 0.55); }
+.sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 600px; background: var(--surface); color: var(--ink); border-radius: 16px 16px 0 0; border: 1px solid var(--line);
+  padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 12px; max-height: 92%; overflow-y: auto; }
+.sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); z-index: 60; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: var(--fs-sm); font-weight: 600; max-width: calc(100% - 32px); }
+.loading { padding: 40px 0; text-align: center; color: var(--muted); }
+.logoprev { display: flex; align-items: center; gap: 12px; }
+.pre { font-family: ui-monospace, Menlo, Consolas, monospace !important; font-size: 0.75rem !important; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">খাতা খোলা হচ্ছে…</div></div>
+<nav class="tabbar" id="nav" aria-label="প্রধান মেনু" hidden></nav>
+<div id="sheetRoot"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /*CALC-START*/
+  var BN = '০১২৩৪৫৬৭৮৯';
+  var MONTHS = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+  var MSHORT = ['জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে'];
+  function toBn(s) { return String(s).replace(/\d/g, function (d) { return BN[+d]; }); }
+  function round2(n) { return Math.round(n * 100) / 100; }
+  function fmt(n, dec) {
+    dec = dec || 0;
+    return toBn(Number(n).toLocaleString('en-IN', { minimumFractionDigits: dec, maximumFractionDigits: dec }));
+  }
+  function num(n) { n = round2(n); return fmt(n, Number.isInteger(n) ? 0 : 2); }
+  function money(n) { return (n < 0 ? '−' : '') + '৳' + num(Math.abs(n)); }
+  function compact(n) { return n >= 10000 ? fmt(n / 1000, 1) + 'হা' : fmt(Math.round(n)); }
+  function parseNum(s) {
+    if (s == null) return NaN;
+    var t = String(s).replace(/[০-৯]/g, function (d) { return BN.indexOf(d); }).replace(/[,\s৳]/g, '').replace('।', '.');
+    if (t === '') return NaN;
+    var v = Number(t);
+    return isFinite(v) ? v : NaN;
+  }
+  function isoDate(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function parseISO(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
+  function addDays(iso, n) { var d = parseISO(iso); d.setDate(d.getDate() + n); return isoDate(d); }
+  function daysBetween(a, b) { return Math.round((parseISO(b) - parseISO(a)) / 86400000); }
+  function dateTxt(iso) {
+    var d = parseISO(iso); if (!d) return '';
+    var s = toBn(d.getDate()) + ' ' + MONTHS[d.getMonth()];
+    return d.getFullYear() === new Date().getFullYear() ? s : s + ' ' + toBn(d.getFullYear());
+  }
+  function sumBy(arr, fn) { var t = 0; arr.forEach(function (x) { t += fn(x); }); return round2(t); }
+
+  function liveSales(d) { return d.sales.filter(function (s) { return !s.void; }); }
+  function livePurch(d) { return d.purchases.filter(function (s) { return !s.void; }); }
+  function saleProfit(s) { var p = -(s.disc || 0); s.items.forEach(function (i) { p += (i.price - i.cost) * i.qty; }); return round2(p); }
+  function isLow(p) { return p.stock <= (p.min || 0); }
+
+  /* Customer due and supplier payable, in one pass. */
+  function balances(d) {
+    var c = {}, s = {};
+    liveSales(d).forEach(function (x) { if (x.party) c[x.party] = round2((c[x.party] || 0) + x.total - x.paid); });
+    livePurch(d).forEach(function (x) { if (x.party) s[x.party] = round2((s[x.party] || 0) + x.total - x.paid); });
+    d.payments.forEach(function (p) {
+      if (p.kind === 'cust') c[p.party] = round2((c[p.party] || 0) - p.amt);
+      else s[p.party] = round2((s[p.party] || 0) - p.amt);
+    });
+    return { c: c, s: s };
+  }
+  function totalPositive(map) { var t = 0; Object.keys(map).forEach(function (k) { if (map[k] > 0) t += map[k]; }); return round2(t); }
+
+  function rangeStats(d, from, to) {
+    var ss = liveSales(d).filter(function (x) { return x.date >= from && x.date <= to; });
+    var sales = sumBy(ss, function (x) { return x.total; });
+    var profit = sumBy(ss, saleProfit);
+    var exp = sumBy(d.expenses.filter(function (x) { return x.date >= from && x.date <= to; }), function (x) { return x.amt; });
+    return { sales: sales, profit: profit, exp: exp, net: round2(profit - exp), count: ss.length };
+  }
+  function bucketStats(d, kind, today) {
+    var out = [], i, to, from, y, m, dt;
+    if (kind === 'day') {
+      for (i = 13; i >= 0; i--) { to = addDays(today, -i); out.push({ label: toBn(parseISO(to).getDate()), from: to, to: to }); }
+    } else if (kind === 'week') {
+      for (i = 7; i >= 0; i--) { to = addDays(today, -7 * i); from = addDays(to, -6); dt = parseISO(from); out.push({ label: toBn(dt.getDate()) + ' ' + MSHORT[dt.getMonth()], from: from, to: to }); }
+    } else {
+      dt = parseISO(today);
+      for (i = 5; i >= 0; i--) {
+        y = dt.getFullYear(); m = dt.getMonth() - i;
+        var f = new Date(y, m, 1), l = new Date(y, m + 1, 0);
+        out.push({ label: MSHORT[f.getMonth()], from: isoDate(f), to: isoDate(l) });
+      }
+    }
+    return out.map(function (b) { return { label: b.label, from: b.from, to: b.to, s: rangeStats(d, b.from, b.to) }; });
+  }
+
+  /* One pass over sales: last sale date and units sold in a window, per product. */
+  function salesIndex(d, fromDate) {
+    var idx = {};
+    liveSales(d).forEach(function (s) {
+      s.items.forEach(function (it) {
+        var e = idx[it.pid] || (idx[it.pid] = { last: '', units: 0, revenue: 0, profit: 0 });
+        if (s.date > e.last) e.last = s.date;
+        if (s.date >= fromDate) { e.units += it.qty; e.revenue += it.price * it.qty; e.profit += (it.price - it.cost) * it.qty; }
+      });
+    });
+    return idx;
+  }
+  function deadStock(d, today, days) {
+    var idx = salesIndex(d, '0000-00-00'), out = [];
+    d.products.forEach(function (p) {
+      if (p.stock <= 0) return;
+      var e = idx[p.id], ref = e && e.last ? e.last : null, since;
+      if (ref) since = daysBetween(ref, today);
+      else { since = daysBetween(p.created || today, today); if (since < days) return; }
+      if (since >= days) out.push({ p: p, since: since, never: !ref, capital: round2(p.stock * p.buy) });
+    });
+    return out.sort(function (a, b) { return b.capital - a.capital; });
+  }
+  function reorder(d, today, lead, cover) {
+    var from = addDays(today, -29), idx = salesIndex(d, from), out = [];
+    d.products.forEach(function (p) {
+      var e = idx[p.id]; if (!e || e.units <= 0) return;
+      var age = daysBetween(p.created || from, today) + 1;
+      var win = Math.min(30, Math.max(7, age));
+      var avg = e.units / win;
+      var left = p.stock <= 0 ? 0 : p.stock / avg;
+      if (left > lead) return;
+      var qty = Math.max(1, Math.ceil(avg * cover - p.stock));
+      out.push({ p: p, avg: avg, left: left, qty: qty, cost: round2(qty * p.buy) });
+    });
+    return out.sort(function (a, b) { return a.left - b.left; });
+  }
+
+  /* Business health: five parts, 20 points each. */
+  function health(d, today) {
+    var cur = rangeStats(d, addDays(today, -6), today), prev = rangeStats(d, addDays(today, -13), addDays(today, -7));
+    var m30 = rangeStats(d, addDays(today, -29), today);
+    var parts = [], pts, detail, tip;
+    // 1. sales trend
+    if (cur.sales <= 0) { pts = 0; detail = 'গত ৭ দিনে বিক্রি নেই'; tip = 'বিক্রি লিখতে শুরু করুন বা এই সপ্তাহের হিসাব বাকি আছে কি না দেখুন।'; }
+    else if (prev.sales <= 0) { pts = 20; detail = 'আগের ৭ দিনে বিক্রি ছিল না, এবার ' + money(cur.sales); tip = 'বিক্রি শুরু হয়েছে, ধারাবাহিকতা রাখুন।'; }
+    else { var r = cur.sales / prev.sales; pts = Math.min(20, 20 * r); detail = 'গত ৭ দিন ' + money(cur.sales) + ', তার আগের ৭ দিন ' + money(prev.sales); tip = r >= 1 ? 'বিক্রি আগের সপ্তাহের সমান বা বেশি।' : 'বিক্রি আগের সপ্তাহের চেয়ে ' + fmt(Math.round((1 - r) * 100)) + '% কমেছে।'; }
+    parts.push({ key: 'sales', title: 'বিক্রির গতি', pts: pts, detail: detail, tip: tip, rule: 'গত ৭ দিনের বিক্রি আগের ৭ দিনের সমান বা বেশি হলে পুরো ২০।' });
+    // 2. stock availability
+    var n = d.products.length, low = d.products.filter(isLow).length;
+    if (!n) { pts = 10; detail = 'কোনো পণ্য নেই'; tip = 'পণ্য যোগ করুন।'; }
+    else { pts = 20 * (1 - low / n); detail = fmt(n) + ' পণ্যের মধ্যে ' + fmt(low) + 'টির স্টক কম বা শেষ'; tip = low ? 'কম স্টকের পণ্যগুলো কিনে নিন।' : 'সব পণ্যের স্টক ঠিক আছে।'; }
+    parts.push({ key: 'stock', title: 'স্টক', pts: pts, detail: detail, tip: tip, rule: 'যত বেশি পণ্যের স্টক কম বা শেষ, তত নম্বর কাটে।' });
+    // 3. dead stock
+    var dead = deadStock(d, today, 30), deadVal = sumBy(dead, function (x) { return x.capital; }), stockVal = sumBy(d.products, function (p) { return Math.max(0, p.stock) * p.buy; });
+    if (stockVal <= 0) { pts = 10; detail = 'স্টকের মূল্য নেই'; tip = ''; }
+    else { pts = 20 * (1 - deadVal / stockVal); detail = 'স্টকের মূল্য ' + money(stockVal) + ', তার মধ্যে ৩০ দিনে বিক্রি হয়নি ' + money(deadVal); tip = deadVal ? 'পুরনো পণ্যে ছাড় দিয়ে টাকা ফিরিয়ে আনুন।' : 'আটকে থাকা স্টক নেই।'; }
+    parts.push({ key: 'dead', title: 'আটকে থাকা স্টক', pts: pts, detail: detail, tip: tip, rule: 'পুঁজির যত অংশ ৩০ দিন ধরে বিক্রি হচ্ছে না, তত নম্বর কাটে।' });
+    // 4. dues
+    var due = totalPositive(balances(d).c);
+    if (m30.sales <= 0) { pts = due > 0 ? 0 : 20; } else { pts = 20 * (1 - Math.min(1, due / m30.sales)); }
+    detail = 'কাস্টমারের বাকি ' + money(due) + ', ৩০ দিনের বিক্রি ' + money(m30.sales);
+    tip = due > 0 ? 'বেশি বাকির কাস্টমারদের কাছ থেকে টাকা আদায় করুন।' : 'কোনো বাকি নেই।';
+    parts.push({ key: 'due', title: 'বকেয়া', pts: pts, detail: detail, tip: tip, rule: 'বাকি এক মাসের বিক্রির সমান হলে এই অংশে ০।' });
+    // 5. margin after expenses
+    if (m30.sales <= 0) { pts = m30.exp > 0 ? 0 : 10; detail = 'গত ৩০ দিনে বিক্রি নেই'; tip = ''; }
+    else {
+      var margin = m30.net / m30.sales; pts = Math.max(0, Math.min(20, 20 * margin / 0.15));
+      detail = 'লাভ ' + money(m30.profit) + ', খরচ ' + money(m30.exp) + ', খরচ বাদে লাভ বিক্রির ' + fmt(Math.round(margin * 100)) + '%';
+      tip = margin >= 0.15 ? 'খরচ বাদেও ভালো লাভ থাকছে।' : 'খরচ কমান বা লাভ বেশি এমন পণ্যে জোর দিন।';
+    }
+    parts.push({ key: 'margin', title: 'খরচ বাদে লাভ', pts: pts, detail: detail, tip: tip, rule: 'খরচ বাদে লাভ বিক্রির ১৫% বা বেশি হলে পুরো ২০, ০% বা কম হলে ০।' });
+    var score = Math.round(sumBy(parts, function (p) { return p.pts; }));
+    var label = score >= 80 ? 'ভালো' : (score >= 60 ? 'মোটামুটি' : (score >= 40 ? 'সতর্ক থাকুন' : 'ঝুঁকিতে'));
+    return { score: score, label: label, parts: parts };
+  }
+
+  function closingSummary(d, date) {
+    var ss = liveSales(d).filter(function (x) { return x.date === date; });
+    var ps = livePurch(d).filter(function (x) { return x.date === date; });
+    var pay = d.payments.filter(function (x) { return x.date === date; });
+    var r = {
+      salesTotal: sumBy(ss, function (x) { return x.total; }), salesCount: ss.length,
+      salesPaid: sumBy(ss, function (x) { return x.paid; }), dueCreated: sumBy(ss, function (x) { return x.total - x.paid; }),
+      profit: sumBy(ss, saleProfit),
+      collected: sumBy(pay.filter(function (x) { return x.kind === 'cust'; }), function (x) { return x.amt; }),
+      expenses: sumBy(d.expenses.filter(function (x) { return x.date === date; }), function (x) { return x.amt; }),
+      purchPaid: sumBy(ps, function (x) { return x.paid; }),
+      suppPaid: sumBy(pay.filter(function (x) { return x.kind === 'supp'; }), function (x) { return x.amt; })
+    };
+    r.cashIn = round2(r.salesPaid + r.collected);
+    r.cashOut = round2(r.expenses + r.purchPaid + r.suppPaid);
+    return r;
+  }
+  /*CALC-END*/
+
+  /* ================= storage ================= */
+  var kv = (function () {
+    var idb = null, mode = 'mem', mem = {};
+    function fallback(res) { try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); mode = 'ls'; } catch (e) { mode = 'mem'; } res(); }
+    function open() {
+      return new Promise(function (res) {
+        try {
+          var r = indexedDB.open('smart-shop-manager', 1);
+          r.onupgradeneeded = function () { r.result.createObjectStore('kv'); };
+          r.onsuccess = function () { idb = r.result; mode = 'idb'; res(); };
+          r.onerror = function () { fallback(res); };
+          r.onblocked = function () { fallback(res); };
+        } catch (e) { fallback(res); }
+      });
+    }
+    function tx(kind, fn) {
+      return new Promise(function (res) {
+        try {
+          var t = idb.transaction('kv', kind), s = t.objectStore('kv'), q = fn(s);
+          t.oncomplete = function () { res(q && q.result !== undefined ? q.result : null); };
+          t.onerror = function () { res(null); };
+          t.onabort = function () { res(null); };
+        } catch (e) { res(null); }
+      });
+    }
+    return {
+      open: open,
+      mode: function () { return mode; },
+      get: function (k) {
+        if (mode === 'idb') return tx('readonly', function (s) { return s.get(k); });
+        if (mode === 'ls') { try { var v = localStorage.getItem('ssm:' + k); return Promise.resolve(v ? JSON.parse(v) : null); } catch (e) { return Promise.resolve(null); } }
+        return Promise.resolve(mem[k] || null);
+      },
+      set: function (k, v) {
+        if (mode === 'idb') return tx('readwrite', function (s) { return s.put(v, k); });
+        if (mode === 'ls') { try { localStorage.setItem('ssm:' + k, JSON.stringify(v)); } catch (e) { /* full */ } return Promise.resolve(); }
+        mem[k] = v; return Promise.resolve();
+      },
+      del: function (k) {
+        if (mode === 'idb') return tx('readwrite', function (s) { return s.delete(k); });
+        if (mode === 'ls') { try { localStorage.removeItem('ssm:' + k); } catch (e) { /* ignore */ } return Promise.resolve(); }
+        delete mem[k]; return Promise.resolve();
+      }
+    };
+  })();
+
+  /* ================= state ================= */
+  function $(s) { return document.querySelector(s); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function T() { return isoDate(new Date()); }
+
+  var meta = null, ALL = {}, D = null;
+  var ui = { view: 'home', p: {}, hist: [], q: '', pfilter: 'all', pcat: '', people: 'cust', pq: '', anaKind: 'day', anaMetric: 'sales', deadDays: 30 };
+  var cart = null;
+  var app = $('#app'), nav = $('#nav'), sheetRoot = $('#sheetRoot');
+
+  function ensureData(d) {
+    d = d && typeof d === 'object' ? d : {};
+    ['products', 'customers', 'suppliers', 'sales', 'purchases', 'payments', 'expenses', 'closings', 'adjusts'].forEach(function (k) { if (!Array.isArray(d[k])) d[k] = []; });
+    if (!Array.isArray(d.cats)) d.cats = [];
+    d.settings = d.settings || {};
+    if (!(d.settings.lead > 0)) d.settings.lead = 7;
+    if (!(d.settings.cover > 0)) d.settings.cover = 14;
+    d.products.forEach(function (p) { p.stock = Number(p.stock) || 0; p.buy = Number(p.buy) || 0; p.sell = Number(p.sell) || 0; p.min = Number(p.min) || 0; if (!p.created) p.created = T(); });
+    return d;
+  }
+  var saveTimer = null, dirty = {};
+  function save() {
+    dirty[meta.active] = true; dirty.__meta = true;
+    clearTimeout(saveTimer); saveTimer = setTimeout(flush, 250);
+  }
+  function flush() {
+    clearTimeout(saveTimer);
+    Object.keys(dirty).forEach(function (k) {
+      if (k === '__meta') kv.set('meta', meta); else if (ALL[k]) kv.set('data:' + k, ALL[k]);
+    });
+    dirty = {};
+  }
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); });
+
+  /* ================= sample data ================= */
+  function makeSample() {
+    var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    function ri(a, b) { return a + Math.floor(rnd() * (b - a + 1)); }
+    var t = T();
+    var P = [
+      ['চাল (মিনিকেট)', 'খাদ্যশস্য', 'কেজি', 62, 68, 120, 30, 5, 9],
+      ['মসুর ডাল', 'খাদ্যশস্য', 'কেজি', 110, 125, 45, 15, 3, 5],
+      ['আটা (২ কেজি)', 'খাদ্যশস্য', 'প্যাকেট', 95, 105, 25, 8, 2, 4],
+      ['সয়াবিন তেল (১ লিটার)', 'তেল ও মসলা', 'বোতল', 175, 190, 8, 12, 3, 8],
+      ['লবণ (১ কেজি)', 'তেল ও মসলা', 'প্যাকেট', 38, 45, 3, 10, 4, 7],
+      ['চিনি', 'তেল ও মসলা', 'কেজি', 118, 130, 60, 20, 3, 6],
+      ['ডিম (হালি)', 'দৈনন্দিন', 'হালি', 48, 55, 40, 12, 3, 6],
+      ['চা পাতা (২৫০ গ্রাম)', 'নাস্তা ও পানীয়', 'প্যাকেট', 120, 135, 14, 5, 1, 3],
+      ['বিস্কুট', 'নাস্তা ও পানীয়', 'প্যাকেট', 18, 22, 70, 20, 4, 8],
+      ['সাবান', 'পরিষ্কার ও ব্যক্তিগত', 'পিস', 32, 38, 36, 10, 2, 4],
+      ['ডিটারজেন্ট (৫০০ গ্রাম)', 'পরিষ্কার ও ব্যক্তিগত', 'প্যাকেট', 70, 85, 22, 6, 0, 0],
+      ['টুথপেস্ট', 'পরিষ্কার ও ব্যক্তিগত', 'পিস', 55, 68, 18, 5, 0, 0]
+    ];
+    var d = ensureData({});
+    d.cats = ['খাদ্যশস্য', 'তেল ও মসলা', 'দৈনন্দিন', 'নাস্তা ও পানীয়', 'পরিষ্কার ও ব্যক্তিগত'];
+    P.forEach(function (x, i) {
+      d.products.push({ id: 'p' + i, name: x[0], cat: x[1], unit: x[2], buy: x[3], sell: x[4], stock: x[5], min: x[6], barcode: '', created: addDays(t, -70), _w: x[7], _w2: x[8] });
+    });
+    d.customers = [
+      { id: 'c1', name: 'করিম মিয়া', phone: '01700000001', addr: 'মেইন রোড' },
+      { id: 'c2', name: 'সালমা বেগম', phone: '01700000002', addr: '' },
+      { id: 'c3', name: 'হাসান স্টোর', phone: '', addr: 'বাজার রোড' }
+    ];
+    d.suppliers = [
+      { id: 's1', name: 'রহমান ট্রেডার্স', phone: '01800000001', addr: '' },
+      { id: 's2', name: 'আলম এন্টারপ্রাইজ', phone: '', addr: '' }
+    ];
+    var sid = 0;
+    for (var ago = 60; ago >= 0; ago--) {
+      var date = addDays(t, -ago), n = ri(3, 6);
+      for (var k = 0; k < n; k++) {
+        var items = [], used = {}, m = ri(1, 3), tries = 0;
+        while (items.length < m && tries++ < 12) {
+          var pi = ri(0, 9);
+          if (pi === 9 && false) continue;
+          var p = d.products[pi];
+          if (used[pi]) continue;
+          if (p.name === 'টুথপেস্ট') continue;
+          used[pi] = 1;
+          items.push({ pid: p.id, name: p.name, qty: ri(1, p._w2 > 0 ? Math.min(p._w2, 4) : 2), price: p.sell, cost: p.buy });
+        }
+        if (ago >= 40 && ago <= 55 && rnd() < 0.5) { var tp = d.products[11]; items.push({ pid: tp.id, name: tp.name, qty: 1, price: tp.sell, cost: tp.buy }); }
+        var total = items.reduce(function (a, b) { return a + b.price * b.qty; }, 0), party = '', paid = total;
+        if (rnd() < 0.25) { party = 'c' + ri(1, 3); if (rnd() < 0.4) paid = Math.round(total * (rnd() < 0.5 ? 0 : 0.5)); }
+        d.sales.push({ id: 'sa' + (sid++), ts: parseISO(date).getTime() + 32400000 + k * 3600000, date: date, party: party, partyName: party ? d.customers[+party.slice(1) - 1].name : '', items: items, disc: 0, total: total, paid: paid });
+      }
+    }
+    d.products.forEach(function (p) { delete p._w; delete p._w2; });
+    d.purchases = [
+      { id: 'pu1', ts: Date.now() - 20 * 86400000, date: addDays(t, -20), party: 's1', partyName: 'রহমান ট্রেডার্স', items: [{ pid: 'p0', name: 'চাল (মিনিকেট)', qty: 100, cost: 62 }, { pid: 'p1', name: 'মসুর ডাল', qty: 30, cost: 110 }], disc: 0, total: 9500, paid: 6000 },
+      { id: 'pu2', ts: Date.now() - 9 * 86400000, date: addDays(t, -9), party: 's2', partyName: 'আলম এন্টারপ্রাইজ', items: [{ pid: 'p5', name: 'চিনি', qty: 50, cost: 118 }], disc: 0, total: 5900, paid: 5900 }
+    ];
+    d.payments = [
+      { id: 'py1', ts: Date.now() - 12 * 86400000, date: addDays(t, -12), kind: 'cust', party: 'c1', partyName: 'করিম মিয়া', amt: 300, note: '' },
+      { id: 'py2', ts: Date.now() - 5 * 86400000, date: addDays(t, -5), kind: 'supp', party: 's1', partyName: 'রহমান ট্রেডার্স', amt: 1000, note: '' }
+    ];
+    [[28, 'দোকান ভাড়া', 6000], [27, 'বিদ্যুৎ বিল', 850], [14, 'পরিবহন', 400], [8, 'নাস্তা', 120], [3, 'পরিবহন', 250], [1, 'নাস্তা', 90]].forEach(function (e, i) {
+      d.expenses.push({ id: 'ex' + i, ts: Date.now() - e[0] * 86400000, date: addDays(t, -e[0]), cat: e[1], amt: e[2], note: '' });
+    });
+    return d;
+  }
+
+  /* ================= small helpers ================= */
+  var toastTimer = null;
+  function toast(msg) { var el = $('#toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.hidden = true; }, 2400); }
+  var armed = {};
+  function confirmTwice(btn, key, idle, run) {
+    if (armed[key]) { clearTimeout(armed[key]); delete armed[key]; run(); return; }
+    btn.textContent = 'নিশ্চিত? আবার চাপুন';
+    armed[key] = setTimeout(function () { delete armed[key]; if (document.body.contains(btn)) btn.textContent = idle; }, 3500);
+  }
+  function copyText(text, srcEl) {
+    function fb() { try { if (srcEl) { srcEl.focus(); srcEl.select(); document.execCommand('copy'); toast('কপি হয়েছে'); return; } } catch (e) { /* ignore */ } toast('কপি করা যায়নি, লেখাটি চেপে ধরে কপি করুন'); }
+    try { navigator.clipboard.writeText(text).then(function () { toast('কপি হয়েছে'); }, fb); } catch (e) { fb(); }
+  }
+  function prod(id) { return D.products.filter(function (p) { return p.id === id; })[0]; }
+  function cust(id) { return D.customers.filter(function (p) { return p.id === id; })[0]; }
+  function supp(id) { return D.suppliers.filter(function (p) { return p.id === id; })[0]; }
+  function timeTxt(ts) { var d = new Date(ts); return toBn(String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')); }
+  function unitOf(p) { return p && p.unit ? p.unit : 'পিস'; }
+  function fld(id, label, extra, val, tag) {
+    return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" autocomplete="off" ' + (extra || '') + ' value="' + esc(val == null ? '' : val) + '"></div>';
+  }
+  var IC = {
+    back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+    home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg>',
+    sell: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h15l-2 9H8z"/><path d="M6 6L5 3H2"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg>',
+    box: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l9-5 9 5v9l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v9"/></svg>',
+    people: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17.5" cy="9" r="2.4"/><path d="M17 14c2.5 0 4.5 1.8 4.5 4.5"/></svg>',
+    more: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>'
+  };
+
+  /* ================= navigation ================= */
+  var TABS = { home: 'home', sell: 'sell', products: 'products', people: 'people', cust: 'people', supp: 'people', more: 'more' };
+  function go(view, p) { ui.hist.push({ view: ui.view, p: ui.p }); ui.view = view; ui.p = p || {}; render(); window.scrollTo(0, 0); }
+  function tab(view) { ui.hist = []; ui.view = view; ui.p = {}; render(); window.scrollTo(0, 0); }
+  function back() { var h = ui.hist.pop(); if (h) { ui.view = h.view; ui.p = h.p; } else { ui.view = 'home'; ui.p = {}; } render(); window.scrollTo(0, 0); }
+
+  function topbar() {
+    var s = meta.shops.filter(function (x) { return x.id === meta.active; })[0];
+    var logo = s.logo ? '<img src="' + esc(s.logo) + '" alt="">' : esc((s.name || 'দ').charAt(0));
+    return '<header class="top"><span class="logo">' + logo + '</span><div class="t"><b>' + esc(s.name) + '</b><small>' + dateTxt(T()) + (s.addr ? ' · ' + esc(s.addr) : '') + '</small></div></header>';
+  }
+  function subtop(title, right) { return '<div class="sub-top"><button type="button" class="back" data-act="back" aria-label="পিছনে">' + IC.back + '</button><h1>' + title + '</h1>' + (right || '') + '</div>'; }
+
+  function renderNav() {
+    if (ui.view === 'cart') { nav.hidden = true; return; }
+    nav.hidden = false;
+    var cur = TABS[ui.view] || 'more', low = D.products.filter(isLow).length;
+    var items = [['home', 'ড্যাশবোর্ড', IC.home], ['sell', 'বিক্রি', IC.sell], ['products', 'পণ্য', IC.box], ['people', 'লেনদেন', IC.people], ['more', 'আরও', IC.more]];
+    nav.innerHTML = '<div class="tabbar-in">' + items.map(function (it) {
+      return '<button type="button" class="navbtn" data-act="tab" data-v="' + it[0] + '"' + (cur === it[0] ? ' aria-current="page"' : '') + '>' + it[2] + it[1] +
+        (it[0] === 'products' && low ? '<span class="bd" aria-label="' + low + ' পণ্যের স্টক কম">' + fmt(low) + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+  }
+
+  function render() {
+    var fn = VIEWS[ui.view] || VIEWS.home;
+    app.innerHTML = fn();
+    renderNav();
+    if (POST[ui.view]) POST[ui.view]();
+  }
+
+  /* ================= views ================= */
+  var VIEWS = {}, POST = {};
+
+  function kpi(label, value, sub, cls, act, extra) {
+    var tag = act ? 'button type="button" data-act="' + act + '"' + (extra || '') : 'div';
+    return '<' + tag + ' class="kpi ' + (cls || '') + '"><span class="l">' + label + '</span><span class="v">' + value + '</span>' + (sub ? '<span class="s">' + sub + '</span>' : '') + '</' + (act ? 'button' : 'div') + '>';
+  }
+  function barChart(vals, labels, hiLast, showVals) {
+    var max = Math.max.apply(null, vals.concat([1]));
+    return '<div class="bars" role="img" aria-label="চার্ট">' + vals.map(function (v, i) {
+      var h = Math.max(2, Math.round(Math.max(0, v) / max * 112));
+      return '<div class="bcol' + (hiLast && i === vals.length - 1 ? ' hi' : '') + '"><div class="bar" style="height:' + h + 'px"></div><span class="bv">' + (showVals ? compact(v) : '') + '</span><span class="bl">' + labels[i] + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  VIEWS.home = function () {
+    var t = T(), st = rangeStats(D, t, t), low = D.products.filter(isLow), bal = balances(D), due = totalPositive(bal.c);
+    var h = topbar();
+    if (meta.shops.filter(function (x) { return x.id === meta.active; })[0].sample) {
+      h += '<div class="banner"><span><span class="tag">নমুনা</span> এই দোকানের সব তথ্য নমুনা। নিজের দোকান শুরু করতে নিচের বোতাম চাপুন।</span><button type="button" class="btn ghost small" data-act="start-real">নমুনা মুছে নিজের দোকান শুরু করুন</button></div>';
+    }
+    if (kv.mode() === 'mem') h += '<div class="banner warnb"><span>এই ব্রাউজারে তথ্য সেভ হচ্ছে না। অ্যাপ বন্ধ করলে সব মুছে যাবে।</span></div>';
+    h += '<div class="kpis">' +
+      kpi('আজকের বিক্রি', money(st.sales), fmt(st.count) + 'টি বিক্রি', 'hero') +
+      kpi('আজকের লাভ', money(st.profit), 'খরচ বাদে ' + money(st.net), '') +
+      kpi('মোট পণ্য', fmt(D.products.length), 'স্টকের মূল্য ' + money(sumBy(D.products, function (p) { return Math.max(0, p.stock) * p.buy; })), '', 'tab', ' data-v="products"') +
+      kpi('কম স্টক', '<span class="' + (low.length ? 'warn' : '') + '">' + fmt(low.length) + '</span>', low.length ? 'পণ্য কিনতে হবে' : 'সব ঠিক আছে', '', 'low-stock') +
+      kpi('মোট কাস্টমার', fmt(D.customers.length), '', '', 'tab', ' data-v="people"') +
+      kpi('কাস্টমারের বাকি', '<span class="' + (due > 0 ? 'bad' : '') + '">' + money(due) + '</span>', '', '', 'tab', ' data-v="people"') + '</div>';
+    if (low.length) {
+      h += '<div class="banner warnb"><b>স্টক কম:</b><span>' + low.slice(0, 4).map(function (p) { return esc(p.name) + ' (' + fmt(p.stock) + ')'; }).join(', ') + (low.length > 4 ? ' ও আরও ' + fmt(low.length - 4) + 'টি' : '') + '</span></div>';
+    }
+    var days = [], vals = [], labels = [], i;
+    for (i = 6; i >= 0; i--) { var dd = addDays(t, -i); days.push(dd); vals.push(rangeStats(D, dd, dd).sales); labels.push(toBn(parseISO(dd).getDate())); }
+    h += '<div class="card"><h3>গত ৭ দিনের বিক্রি</h3>' + barChart(vals, labels, true, true) + '</div>';
+    h += '<div class="btnrow"><button type="button" class="btn" data-act="new-sale">নতুন বিক্রি</button><button type="button" class="btn ghost" data-act="new-purchase">নতুন ক্রয়</button><button type="button" class="btn ghost" data-act="go" data-v="expenses">খরচ লিখুন</button></div>';
+    var hs = health(D, t);
+    h += '<button type="button" class="kpi" data-act="go" data-v="health"><span class="l">ব্যবসার স্বাস্থ্য</span><span class="v">' + toBn(hs.score) + '/১০০ · ' + hs.label + '</span><span class="s">কীভাবে হিসাব হলো দেখুন</span></button>';
+    var tx = [];
+    D.sales.forEach(function (x) { tx.push({ ts: x.ts, kind: 'বিক্রি', who: x.partyName || 'নগদ কাস্টমার', amt: x.total, sign: 1, void: x.void }); });
+    D.purchases.forEach(function (x) { tx.push({ ts: x.ts, kind: 'ক্রয়', who: x.partyName || 'সাপ্লায়ার', amt: x.total, sign: -1, void: x.void }); });
+    D.payments.forEach(function (x) { tx.push({ ts: x.ts, kind: x.kind === 'cust' ? 'টাকা পেলাম' : 'সাপ্লায়ারকে দিলাম', who: x.partyName, amt: x.amt, sign: x.kind === 'cust' ? 1 : -1 }); });
+    D.expenses.forEach(function (x) { tx.push({ ts: x.ts, kind: 'খরচ', who: x.cat, amt: x.amt, sign: -1 }); });
+    tx.sort(function (a, b) { return b.ts - a.ts; });
+    h += '<div class="list"><div class="list-h">সাম্প্রতিক লেনদেন</div>';
+    if (!tx.length) h += '<div class="empty"><p>এখনো কোনো লেনদেন নেই।</p></div>';
+    tx.slice(0, 8).forEach(function (x) {
+      h += '<div class="row' + (x.void ? ' void' : '') + '"><span class="m"><b>' + x.kind + (x.void ? ' (বাতিল)' : '') + '</b><small>' + esc(x.who) + ' · ' + dateTxt(isoDate(new Date(x.ts))) + ' ' + timeTxt(x.ts) + '</small></span><span class="r ' + (x.sign > 0 ? 'ok' : '') + '">' + (x.sign > 0 ? '+' : '−') + money(x.amt) + '</span></div>';
+    });
+    return h + '</div>';
+  };
+
+  VIEWS.sell = function () {
+    var h = topbar() + '<button type="button" class="btn" data-act="new-sale">নতুন বিক্রি</button>';
+    var list = D.sales.slice().sort(function (a, b) { return b.ts - a.ts; }).slice(0, 80);
+    h += '<div class="list"><div class="list-h">বিক্রির তালিকা</div>';
+    if (!list.length) h += '<div class="empty"><p>এখনো কোনো বিক্রি লেখা হয়নি।</p></div>';
+    list.forEach(function (s) {
+      var due = round2(s.total - s.paid);
+      h += '<button type="button" class="row' + (s.void ? ' void' : '') + '" data-act="sale-detail" data-id="' + esc(s.id) + '"><span class="m"><b>' + esc(s.partyName || 'নগদ কাস্টমার') + (s.void ? '<span class="tag">বাতিল</span>' : '') + (due > 0 && !s.void ? '<span class="tag due">বাকি ' + money(due) + '</span>' : '') + '</b>' +
+        '<small>' + dateTxt(s.date) + ' ' + timeTxt(s.ts) + ' · ' + esc(s.items.map(function (i) { return i.name; }).slice(0, 2).join(', ')) + (s.items.length > 2 ? ' ও আরও' : '') + '</small></span><span class="r">' + money(s.total) + '</span></button>';
+    });
+    return h + '</div>';
+  };
+
+  /* ----- products ----- */
+  function productList() {
+    var q = ui.q.trim().toLowerCase(), list = D.products.filter(function (p) {
+      if (q && p.name.toLowerCase().indexOf(q) < 0 && String(p.barcode || '').indexOf(q) < 0) return false;
+      if (ui.pfilter === 'low' && !isLow(p)) return false;
+      if (ui.pcat && p.cat !== ui.pcat) return false;
+      return true;
+    }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    if (!D.products.length) return '<div class="list"><div class="empty"><p>এখনো কোনো পণ্য নেই। প্রথম পণ্য যোগ করুন।</p><button type="button" class="btn" data-act="add-product">পণ্য যোগ করুন</button></div></div>';
+    if (!list.length) return '<div class="list"><div class="empty"><p>কিছু পাওয়া যায়নি।</p></div></div>';
+    return '<div class="list">' + list.map(function (p) {
+      var mg = p.buy > 0 ? Math.round((p.sell - p.buy) / p.buy * 100) : null;
+      return '<button type="button" class="row" data-act="edit-product" data-id="' + esc(p.id) + '"><span class="m"><b>' + esc(p.name) + (isLow(p) ? '<span class="tag low">' + (p.stock <= 0 ? 'শেষ' : 'কম') + '</span>' : '') + '</b><small>' + (p.cat ? esc(p.cat) + ' · ' : '') + 'স্টক ' + num(p.stock) + ' ' + esc(unitOf(p)) + (p.barcode ? ' · ' + esc(p.barcode) : '') + '</small></span>' +
+        '<span class="r">' + money(p.sell) + '<small>' + (mg != null ? 'লাভ ' + fmt(mg) + '%' : '') + '</small></span></button>';
+    }).join('') + '</div>';
+  }
+  VIEWS.products = function () {
+    var capBuy = sumBy(D.products, function (p) { return Math.max(0, p.stock) * p.buy; }), capSell = sumBy(D.products, function (p) { return Math.max(0, p.stock) * p.sell; });
+    var h = topbar() + '<div class="strip"><div class="kpi"><span class="l">স্টকের মূল্য (ক্রয়মূল্যে)</span><span class="v">' + money(capBuy) + '</span></div><div class="kpi"><span class="l">সম্ভাব্য বিক্রয়মূল্য</span><span class="v">' + money(capSell) + '</span></div></div>';
+    h += '<div class="field"><label for="q">পণ্য খুঁজুন (নাম বা বারকোড)</label><input id="q" type="search" autocomplete="off" value="' + esc(ui.q) + '"></div>';
+    h += '<div class="chips" id="pchips"></div><div id="listArea"></div><button type="button" class="fab" data-act="add-product">+ নতুন পণ্য</button>';
+    return h;
+  };
+  POST.products = function () { drawPChips(); $('#listArea').innerHTML = productList(); };
+  function drawPChips() {
+    var c = ['<button type="button" class="chip" data-act="pf" data-f="all" aria-pressed="' + (ui.pfilter === 'all' && !ui.pcat) + '">সব</button>',
+      '<button type="button" class="chip" data-act="pf" data-f="low" aria-pressed="' + (ui.pfilter === 'low') + '">কম স্টক</button>'];
+    D.cats.forEach(function (x) { c.push('<button type="button" class="chip" data-act="pcat" data-c="' + esc(x) + '" aria-pressed="' + (ui.pcat === x) + '">' + esc(x) + '</button>'); });
+    $('#pchips').innerHTML = c.join('');
+  }
+
+  /* ----- people ----- */
+  function peopleList() {
+    var isC = ui.people === 'cust', bal = balances(D), arr = isC ? D.customers : D.suppliers, q = ui.pq.trim().toLowerCase();
+    var list = arr.filter(function (x) { return !q || x.name.toLowerCase().indexOf(q) >= 0 || String(x.phone || '').indexOf(q) >= 0; })
+      .map(function (x) { return { x: x, b: (isC ? bal.c : bal.s)[x.id] || 0 }; }).sort(function (a, b) { return b.b - a.b || a.x.name.localeCompare(b.x.name); });
+    if (!arr.length) return '<div class="list"><div class="empty"><p>এখনো কোনো ' + (isC ? 'কাস্টমার' : 'সাপ্লায়ার') + ' নেই।</p><button type="button" class="btn" data-act="add-party">যোগ করুন</button></div></div>';
+    if (!list.length) return '<div class="list"><div class="empty"><p>কিছু পাওয়া যায়নি।</p></div></div>';
+    return '<div class="list">' + list.map(function (r) {
+      return '<button type="button" class="row" data-act="open-party" data-id="' + esc(r.x.id) + '"><span class="m"><b>' + esc(r.x.name) + '</b><small>' + esc(r.x.phone || 'ফোন নেই') + '</small></span>' +
+        '<span class="r ' + (r.b > 0 ? 'bad' : (r.b < 0 ? 'ok' : '')) + '">' + money(Math.abs(r.b)) + '<small>' + (r.b > 0 ? (isC ? 'বাকি' : 'দিতে হবে') : (r.b < 0 ? 'অগ্রিম' : 'মিটেছে')) + '</small></span></button>';
+    }).join('') + '</div>';
+  }
+  VIEWS.people = function () {
+    var bal = balances(D), isC = ui.people === 'cust';
+    var h = topbar() + '<div class="seg" role="group" aria-label="ধরন"><button type="button" data-act="pp" data-k="cust" aria-pressed="' + isC + '">কাস্টমার</button><button type="button" data-act="pp" data-k="supp" aria-pressed="' + !isC + '">সাপ্লায়ার</button></div>';
+    h += '<div class="kpi"><span class="l">' + (isC ? 'কাস্টমারদের কাছে মোট পাওনা' : 'সাপ্লায়ারদের মোট দেনা') + '</span><span class="v ' + (isC ? 'bad' : 'warn') + '">' + money(totalPositive(isC ? bal.c : bal.s)) + '</span></div>';
+    h += '<div class="field"><label for="pq">খুঁজুন</label><input id="pq" type="search" autocomplete="off" value="' + esc(ui.pq) + '"></div><div id="listArea"></div><button type="button" class="fab" data-act="add-party">+ নতুন ' + (isC ? 'কাস্টমার' : 'সাপ্লায়ার') + '</button>';
+    return h;
+  };
+  POST.people = function () { $('#listArea').innerHTML = peopleList(); };
+
+  function partyView(isC) {
+    var id = ui.p.id, who = isC ? cust(id) : supp(id);
+    if (!who) return subtop('পাওয়া যায়নি');
+    var bal = balances(D), b = (isC ? bal.c : bal.s)[id] || 0;
+    var h = subtop(esc(who.name), '<button type="button" class="btn ghost small" data-act="edit-party" data-id="' + esc(id) + '">বদলান</button>');
+    h += '<div class="kpis">' + kpi(isC ? (b > 0 ? 'বাকি আছে' : (b < 0 ? 'অগ্রিম জমা' : 'হিসাব মিটেছে')) : (b > 0 ? 'দিতে হবে' : (b < 0 ? 'অগ্রিম দেওয়া' : 'হিসাব মিটেছে')), '<span class="' + (b > 0 ? 'bad' : (b < 0 ? 'ok' : '')) + '">' + money(Math.abs(b)) + '</span>', '', 'hero') +
+      kpi('ফোন', esc(who.phone || 'নেই'), esc(who.addr || ''), '') + '</div>';
+    h += '<div class="btnrow"><button type="button" class="btn" data-act="pay-sheet" data-id="' + esc(id) + '">' + (isC ? 'টাকা পেলাম' : 'টাকা দিলাম') + '</button><button type="button" class="btn ghost" data-act="' + (isC ? 'new-sale-for' : 'new-purchase-for') + '" data-id="' + esc(id) + '">' + (isC ? 'নতুন বিক্রি' : 'নতুন ক্রয়') + '</button></div>';
+    var txs = (isC ? D.sales : D.purchases).filter(function (x) { return x.party === id; });
+    if (isC) {
+      var agg = {}, live = txs.filter(function (x) { return !x.void; });
+      live.forEach(function (s) { s.items.forEach(function (i) { agg[i.name] = (agg[i.name] || 0) + i.qty; }); });
+      var top = Object.keys(agg).sort(function (a, c) { return agg[c] - agg[a]; }).slice(0, 6);
+      var spent = sumBy(live, function (s) { return s.total; });
+      h += '<div class="card"><h3>কেনাকাটার ইতিহাস</h3><p class="note">মোট ' + fmt(live.length) + 'বার কিনেছেন, মোট ' + money(spent) + (live.length ? ', শেষ কিনেছেন ' + dateTxt(live.slice().sort(function (a, c) { return c.ts - a.ts; })[0].date) : '') + '।</p>' +
+        (top.length ? '<div class="pick">' + top.map(function (n) { return '<span class="tag" style="margin:0">' + esc(n) + ' × ' + num(agg[n]) + '</span>'; }).join('') + '</div>' : '') + '</div>';
+    }
+    var rows = [];
+    txs.forEach(function (x) { rows.push({ ts: x.ts, type: isC ? 'sale' : 'purch', x: x }); });
+    D.payments.filter(function (p) { return p.party === id && p.kind === (isC ? 'cust' : 'supp'); }).forEach(function (p) { rows.push({ ts: p.ts, type: 'pay', x: p }); });
+    rows.sort(function (a, c) { return c.ts - a.ts; });
+    h += '<div class="list"><div class="list-h">লেনদেন</div>';
+    if (!rows.length) h += '<div class="empty"><p>এখনো কোনো লেনদেন নেই।</p></div>';
+    rows.forEach(function (r) {
+      var x = r.x;
+      if (r.type === 'pay') {
+        h += '<div class="row"><span class="m"><b>' + (isC ? 'টাকা পেলাম' : 'টাকা দিলাম') + '</b><small>' + dateTxt(x.date) + (x.note ? ' · ' + esc(x.note) : '') + '</small></span><span class="r ok">' + money(x.amt) + '<small><button type="button" class="x" data-act="del-pay" data-id="' + esc(x.id) + '">মুছুন</button></small></span></div>';
+      } else {
+        var due = round2(x.total - x.paid);
+        h += '<button type="button" class="row' + (x.void ? ' void' : '') + '" data-act="' + (r.type === 'sale' ? 'sale-detail' : 'purch-detail') + '" data-id="' + esc(x.id) + '"><span class="m"><b>' + (r.type === 'sale' ? 'বিক্রি' : 'ক্রয়') + (x.void ? '<span class="tag">বাতিল</span>' : '') + (due > 0 && !x.void ? '<span class="tag due">বাকি ' + money(due) + '</span>' : '') + '</b><small>' + dateTxt(x.date) + ' · ' + esc(x.items.map(function (i) { return i.name + ' × ' + num(i.qty); }).join(', ')) + '</small></span><span class="r">' + money(x.total) + '</span></button>';
+      }
+    });
+    return h + '</div>';
+  }
+  VIEWS.cust = function () { return partyView(true); };
+  VIEWS.supp = function () { return partyView(false); };
+
+  /* ----- more ----- */
+  VIEWS.more = function () {
+    var t = T(), low = D.products.filter(isLow).length, dead = deadStock(D, t, D.settings.dead || 30).length, ro = reorder(D, t, D.settings.lead, D.settings.cover).length;
+    function item(v, title, sub, badge) { return '<button type="button" class="row" data-act="go" data-v="' + v + '"><span class="m"><b>' + title + (badge ? '<span class="tag low">' + fmt(badge) + '</span>' : '') + '</b><small>' + sub + '</small></span><span class="r">›</span></button>'; }
+    return topbar() + '<div class="list"><div class="list-h">হিসাব ও রিপোর্ট</div>' +
+      item('analytics', 'বিক্রি, লাভ ও খরচের চার্ট', 'দৈনিক, সাপ্তাহিক, মাসিক ও পণ্যভিত্তিক লাভ') +
+      item('health', 'ব্যবসার স্বাস্থ্য', 'পাঁচটি দিক দেখে ১০০-এর মধ্যে নম্বর') +
+      item('reorder', 'কী কিনতে হবে', 'বিক্রির গতি দেখে কেনার পরামর্শ', ro) +
+      item('dead', 'বিক্রি হচ্ছে না এমন পণ্য', 'আটকে থাকা টাকা', dead) +
+      item('closing', 'দৈনিক ক্লোজিং', 'দোকান বন্ধের ক্যাশ মেলানো') + '</div>' +
+      '<div class="list"><div class="list-h">লেনদেন</div>' +
+      item('purchases', 'ক্রয়', 'নতুন পণ্য কেনার হিসাব') +
+      item('expenses', 'দোকানের খরচ', 'ভাড়া, বিদ্যুৎ, পরিবহন ইত্যাদি') + '</div>' +
+      '<div class="list"><div class="list-h">সেটিংস</div>' +
+      item('cats', 'ক্যাটাগরি', 'পণ্যের ধরন ঠিক করুন') +
+      item('shop', 'দোকান, একাধিক দোকান ও ব্যাকআপ', 'নাম, লোগো, ঠিকানা') + '</div>';
+  };
+
+  /* ----- purchases / expenses / cats ----- */
+  VIEWS.purchases = function () {
+    var h = subtop('ক্রয়') + '<button type="button" class="btn" data-act="new-purchase">নতুন ক্রয়</button>';
+    var list = D.purchases.slice().sort(function (a, b) { return b.ts - a.ts; }).slice(0, 80);
+    h += '<div class="list">';
+    if (!list.length) h += '<div class="empty"><p>এখনো কোনো ক্রয় লেখা হয়নি।</p></div>';
+    list.forEach(function (s) {
+      var due = round2(s.total - s.paid);
+      h += '<button type="button" class="row' + (s.void ? ' void' : '') + '" data-act="purch-detail" data-id="' + esc(s.id) + '"><span class="m"><b>' + esc(s.partyName || 'সাপ্লায়ার ছাড়া') + (s.void ? '<span class="tag">বাতিল</span>' : '') + (due > 0 && !s.void ? '<span class="tag due">বাকি ' + money(due) + '</span>' : '') + '</b><small>' + dateTxt(s.date) + ' · ' + esc(s.items.map(function (i) { return i.name; }).slice(0, 2).join(', ')) + (s.items.length > 2 ? ' ও আরও' : '') + '</small></span><span class="r">' + money(s.total) + '</span></button>';
+    });
+    return h + '</div>';
+  };
+  var EXP_CATS = ['দোকান ভাড়া', 'বিদ্যুৎ বিল', 'বেতন', 'পরিবহন', 'নাস্তা', 'অন্যান্য'];
+  VIEWS.expenses = function () {
+    var t = T(), mo = t.slice(0, 7), mTotal = sumBy(D.expenses.filter(function (x) { return x.date.slice(0, 7) === mo; }), function (x) { return x.amt; });
+    var h = subtop('দোকানের খরচ') + '<div class="kpi"><span class="l">এ মাসের মোট খরচ</span><span class="v">' + money(mTotal) + '</span></div>';
+    h += '<form class="card" id="expForm" novalidate><h3>নতুন খরচ</h3><div class="chips" id="expChips">' + EXP_CATS.map(function (c, i) { return '<button type="button" class="chip" data-act="exp-cat" data-c="' + esc(c) + '" aria-pressed="' + (i === 0) + '">' + c + '</button>'; }).join('') + '</div>' +
+      '<div class="row2">' + fld('ex-amt', 'টাকা', 'inputmode="decimal"') + '<div class="field"><label for="ex-date">তারিখ</label><input id="ex-date" type="date" max="' + t + '" value="' + t + '"></div></div>' + fld('ex-note', 'নোট (না দিলেও চলবে)', 'maxlength="80"') +
+      '<p class="err" id="exErr" role="alert" hidden></p><button type="submit" class="btn">খরচ লিখুন</button></form>';
+    var list = D.expenses.slice().sort(function (a, b) { return b.date < a.date ? -1 : (b.date > a.date ? 1 : b.ts - a.ts); }).slice(0, 60);
+    h += '<div class="list"><div class="list-h">খরচের তালিকা</div>';
+    if (!list.length) h += '<div class="empty"><p>এখনো কোনো খরচ লেখা হয়নি।</p></div>';
+    list.forEach(function (x) { h += '<div class="row"><span class="m"><b>' + esc(x.cat) + '</b><small>' + dateTxt(x.date) + (x.note ? ' · ' + esc(x.note) : '') + '</small></span><span class="r">' + money(x.amt) + '<small><button type="button" class="x" data-act="del-exp" data-id="' + esc(x.id) + '">মুছুন</button></small></span></div>'; });
+    return h + '</div>';
+  };
+  var expCat = EXP_CATS[0];
+
+  VIEWS.cats = function () {
+    var h = subtop('ক্যাটাগরি') + '<form class="card" id="catForm" novalidate>' + fld('cat-new', 'নতুন ক্যাটাগরির নাম', 'maxlength="40"') + '<p class="err" id="catErr" role="alert" hidden></p><button type="submit" class="btn">যোগ করুন</button></form>';
+    h += '<div class="list"><div class="list-h">সব ক্যাটাগরি</div>';
+    if (!D.cats.length) h += '<div class="empty"><p>এখনো কোনো ক্যাটাগরি নেই।</p></div>';
+    D.cats.forEach(function (c) {
+      var n = D.products.filter(function (p) { return p.cat === c; }).length;
+      h += '<button type="button" class="row" data-act="edit-cat" data-c="' + esc(c) + '"><span class="m"><b>' + esc(c) + '</b><small>' + fmt(n) + 'টি পণ্য</small></span><span class="r">বদলান</span></button>';
+    });
+    return h + '</div>';
+  };
+
+  /* ----- analytics ----- */
+  VIEWS.analytics = function () {
+    var t = T(), rows = bucketStats(D, ui.anaKind, t), key = { sales: 'sales', profit: 'profit', exp: 'exp' }[ui.anaMetric];
+    var vals = rows.map(function (r) { return r.s[key]; }), labels = rows.map(function (r) { return r.label; });
+    var tot = { sales: sumBy(rows, function (r) { return r.s.sales; }), profit: sumBy(rows, function (r) { return r.s.profit; }), exp: sumBy(rows, function (r) { return r.s.exp; }) };
+    var h = subtop('বিক্রি, লাভ ও খরচ');
+    h += '<div class="seg" role="group" aria-label="সময়">' + [['day', 'দৈনিক'], ['week', 'সাপ্তাহিক'], ['month', 'মাসিক']].map(function (k) { return '<button type="button" data-act="ana-kind" data-k="' + k[0] + '" aria-pressed="' + (ui.anaKind === k[0]) + '">' + k[1] + '</button>'; }).join('') + '</div>';
+    h += '<div class="chips">' + [['sales', 'বিক্রি'], ['profit', 'লাভ'], ['exp', 'খরচ']].map(function (k) { return '<button type="button" class="chip" data-act="ana-m" data-k="' + k[0] + '" aria-pressed="' + (ui.anaMetric === k[0]) + '">' + k[1] + '</button>'; }).join('') + '</div>';
+    h += '<div class="card">' + barChart(vals, labels, true, rows.length <= 8) +
+      '<p class="note">' + (ui.anaKind === 'day' ? 'গত ১৪ দিন' : (ui.anaKind === 'week' ? 'গত ৮ সপ্তাহ, প্রতি ৭ দিনে একটি' : 'গত ৬ মাস')) + ' · মোট বিক্রি ' + money(tot.sales) + ', লাভ ' + money(tot.profit) + ', খরচ ' + money(tot.exp) + '</p></div>';
+    h += '<div class="card tbl"><table><thead><tr><th>সময়</th><th>বিক্রি</th><th>লাভ</th><th>খরচ</th><th>খরচ বাদে</th></tr></thead><tbody>' +
+      rows.slice().reverse().map(function (r) { return '<tr><td>' + (ui.anaKind === 'month' ? MONTHS[parseISO(r.from).getMonth()] : r.label) + '</td><td>' + num(r.s.sales) + '</td><td>' + num(r.s.profit) + '</td><td>' + num(r.s.exp) + '</td><td class="' + (r.s.net < 0 ? 'bad' : '') + '">' + num(r.s.net) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    var idx = salesIndex(D, addDays(t, -29)), pr = D.products.map(function (p) { var e = idx[p.id] || { units: 0, revenue: 0, profit: 0 }; return { p: p, e: e }; }).filter(function (r) { return r.e.units > 0; }).sort(function (a, b) { return b.e.profit - a.e.profit; });
+    h += '<div class="card tbl"><h3>পণ্যভিত্তিক লাভ (গত ৩০ দিন)</h3>' + (pr.length ? '<table><thead><tr><th>পণ্য</th><th>বিক্রি</th><th>লাভ</th><th>লাভ %</th></tr></thead><tbody>' +
+      pr.slice(0, 15).map(function (r) { return '<tr><td>' + esc(r.p.name) + '</td><td>' + num(r.e.units) + '</td><td>' + num(r.e.profit) + '</td><td>' + (r.e.revenue > 0 ? fmt(Math.round(r.e.profit / r.e.revenue * 100)) + '%' : '–') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="note">এই সময়ে কোনো বিক্রি নেই।</p>') +
+      '<p class="note">ছাড় বাদ দেওয়ার আগের হিসাব। লাভ % মানে বিক্রয়মূল্যের কত শতাংশ লাভ।</p></div>';
+    return h;
+  };
+
+  VIEWS.health = function () {
+    var hs = health(D, T()), C = 2 * Math.PI * 52, off = C * (1 - hs.score / 100);
+    var col = hs.score >= 80 ? 'var(--good)' : (hs.score >= 60 ? 'var(--brand)' : (hs.score >= 40 ? 'var(--warn)' : 'var(--bad)'));
+    var h = subtop('ব্যবসার স্বাস্থ্য');
+    h += '<div class="card"><div class="healthtop"><div class="ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="60" cy="60" r="52" fill="none" stroke="' + col + '" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/></svg><div class="n"><span>' + toBn(hs.score) + '</span><small>১০০-এর মধ্যে</small></div></div>' +
+      '<div><h2>' + hs.label + '</h2><p class="note">পাঁচটি দিকের প্রতিটিতে ২০ করে নম্বর। এটা নিয়ম ধরে করা হিসাব, কোনো আন্দাজ নয়।</p></div></div></div>';
+    h += '<div class="card">' + hs.parts.map(function (p) {
+      return '<div class="part"><div class="h"><span>' + p.title + '</span><span>' + fmt(p.pts, 1) + '/২০</span></div><div class="meter"><i style="width:' + (p.pts / 20 * 100) + '%"></i></div><p class="note">' + p.detail + '</p>' + (p.tip ? '<p>' + p.tip + '</p>' : '') + '<p class="note">নিয়ম: ' + p.rule + '</p></div>';
+    }).join('') + '</div>';
+    return h;
+  };
+
+  VIEWS.dead = function () {
+    var days = ui.deadDays, list = deadStock(D, T(), days), cap = sumBy(list, function (x) { return x.capital; });
+    var h = subtop('বিক্রি হচ্ছে না এমন পণ্য');
+    h += '<div class="seg" role="group" aria-label="কত দিন">' + [15, 30, 60, 90].map(function (n) { return '<button type="button" data-act="dead-days" data-n="' + n + '" aria-pressed="' + (days === n) + '">' + fmt(n) + ' দিন</button>'; }).join('') + '</div>';
+    h += '<div class="kpi hero"><span class="l">আটকে থাকা পুঁজি</span><span class="v">' + money(cap) + '</span><span class="s">' + fmt(list.length) + 'টি পণ্য গত ' + fmt(days) + ' দিনে বিক্রি হয়নি</span></div>';
+    h += '<div class="list"><div class="list-h">তালিকা (বেশি টাকা আটকে থাকা আগে)</div>';
+    if (!list.length) h += '<div class="empty"><p>এই সময়ে আটকে থাকা পণ্য নেই।</p></div>';
+    list.forEach(function (x) { h += '<button type="button" class="row" data-act="edit-product" data-id="' + esc(x.p.id) + '"><span class="m"><b>' + esc(x.p.name) + '</b><small>স্টক ' + num(x.p.stock) + ' ' + esc(unitOf(x.p)) + ' · ' + (x.never ? 'এখনো একবারও বিক্রি হয়নি' : fmt(x.since) + ' দিন আগে শেষ বিক্রি') + '</small></span><span class="r">' + money(x.capital) + '<small>আটকে আছে</small></span></button>'; });
+    return h + '</div><p class="note">ছাড় বা প্যাকেজ অফার দিয়ে এগুলো বিক্রির চেষ্টা করতে পারেন।</p>';
+  };
+
+  VIEWS.reorder = function () {
+    var s = D.settings, list = reorder(D, T(), s.lead, s.cover), cost = sumBy(list, function (x) { return x.cost; });
+    var h = subtop('কী কিনতে হবে');
+    h += '<div class="card"><div class="row2">' + fld('ro-lead', 'কত দিনে মাল আসে', 'inputmode="numeric"', s.lead) + fld('ro-cover', 'কত দিনের মাল রাখতে চান', 'inputmode="numeric"', s.cover) + '</div><p class="note">গত ৩০ দিনের গড় বিক্রি দেখে হিসাব হয়। স্টক শেষ হতে ' + fmt(s.lead) + ' দিন বা কম থাকলে তালিকায় আসে।</p></div>';
+    h += '<div class="list"><div class="list-h"><span>পরামর্শ</span><span>আনুমানিক ' + money(cost) + '</span></div>';
+    if (!list.length) h += '<div class="empty"><p>এখন কিছু কেনার দরকার নেই, বা হিসাবের জন্য যথেষ্ট বিক্রি হয়নি।</p></div>';
+    list.forEach(function (x) {
+      h += '<div class="row"><span class="m"><b>' + esc(x.p.name) + '</b><small>স্টক ' + num(x.p.stock) + ' · দিনে গড় ' + fmt(x.avg, 1) + ' ' + esc(unitOf(x.p)) + ' বিক্রি · ' + (x.left <= 0 ? 'স্টক শেষ' : 'আর ~' + fmt(Math.ceil(x.left)) + ' দিন চলবে') + '</small></span><span class="r">' + num(x.qty) + ' ' + esc(unitOf(x.p)) + '<small>' + money(x.cost) + '</small></span></div>';
+    });
+    h += '</div>';
+    if (list.length) h += '<button type="button" class="btn" data-act="reorder-cart">এই তালিকা দিয়ে নতুন ক্রয় শুরু করুন</button>';
+    return h;
+  };
+
+  VIEWS.closing = function () {
+    var t = T(), h = subtop('দৈনিক ক্লোজিং');
+    h += '<div class="card"><div class="field"><label for="cl-date">কোন দিনের হিসাব</label><input id="cl-date" type="date" max="' + t + '" value="' + esc(ui.p.date || t) + '"></div></div><div id="clArea"></div>';
+    var past = D.closings.slice().sort(function (a, b) { return b.date < a.date ? -1 : 1; }).slice(0, 10);
+    h += '<div class="list"><div class="list-h">আগের ক্লোজিং</div>' + (past.length ? past.map(function (c) {
+      return '<div class="row"><span class="m"><b>' + dateTxt(c.date) + '</b><small>বিক্রি ' + money(c.sales) + ' · গোনা নগদ ' + money(c.counted) + '</small></span><span class="r ' + (c.diff === 0 ? 'ok' : (c.diff < 0 ? 'bad' : 'warn')) + '">' + (c.diff === 0 ? 'মিলেছে' : (c.diff < 0 ? 'কম ' : 'বেশি ') + money(Math.abs(c.diff))) + '</span></div>';
+    }).join('') : '<div class="empty"><p>এখনো কোনো ক্লোজিং সংরক্ষণ করা হয়নি।</p></div>') + '</div>';
+    return h;
+  };
+  function drawClosing() {
+    var date = $('#cl-date').value || T(), s = closingSummary(D, date);
+    var prev = D.closings.filter(function (c) { return c.date < date; }).sort(function (a, b) { return b.date < a.date ? -1 : 1; })[0];
+    var existing = D.closings.filter(function (c) { return c.date === date; })[0];
+    var open = existing ? existing.opening : (prev ? prev.counted : 0);
+    var el = $('#clArea');
+    var keepOpen = $('#cl-open') ? $('#cl-open').value : null, keepCount = $('#cl-count') ? $('#cl-count').value : null;
+    el.innerHTML = '<div class="card"><h3>' + dateTxt(date) + ' এর সারাংশ</h3>' +
+      '<div class="sumrow"><span>মোট বিক্রি (' + fmt(s.salesCount) + 'টি)</span><b>' + money(s.salesTotal) + '</b></div>' +
+      '<div class="sumrow"><span>লাভ</span><b>' + money(s.profit) + '</b></div>' +
+      '<div class="sumrow"><span>বিক্রিতে নগদ পেয়েছি</span><b class="ok">+' + money(s.salesPaid) + '</b></div>' +
+      '<div class="sumrow"><span>পুরনো বাকি আদায়</span><b class="ok">+' + money(s.collected) + '</b></div>' +
+      '<div class="sumrow"><span>খরচ</span><b>−' + money(s.expenses) + '</b></div>' +
+      '<div class="sumrow"><span>ক্রয়ে নগদ দিয়েছি</span><b>−' + money(s.purchPaid) + '</b></div>' +
+      '<div class="sumrow"><span>সাপ্লায়ারকে দিয়েছি</span><b>−' + money(s.suppPaid) + '</b></div>' +
+      '<div class="sumrow"><span>আজকের নতুন বাকি</span><b class="' + (s.dueCreated > 0 ? 'bad' : '') + '">' + money(s.dueCreated) + '</b></div></div>' +
+      '<div class="card"><div class="row2">' + fld('cl-open', 'শুরুতে ক্যাশে ছিল', 'inputmode="decimal"', keepOpen != null ? keepOpen : toBn(open)) + fld('cl-count', 'এখন ক্যাশে গুনে পেলাম', 'inputmode="decimal"', keepCount != null ? keepCount : '') + '</div>' +
+      '<div class="sumrow big"><span>ক্যাশে থাকার কথা</span><span id="clExp"></span></div><div class="sumrow"><span>পার্থক্য</span><b id="clDiff">–</b></div><p class="err" id="clErr" role="alert" hidden></p>' +
+      '<button type="button" class="btn" data-act="save-closing">ক্লোজিং সংরক্ষণ করুন</button></div>';
+    updateClosing();
+  }
+  function updateClosing() {
+    var date = $('#cl-date').value || T(), s = closingSummary(D, date), o = parseNum($('#cl-open').value), c = parseNum($('#cl-count').value);
+    var expected = round2((isNaN(o) ? 0 : o) + s.cashIn - s.cashOut);
+    $('#clExp').textContent = money(expected);
+    var diff = $('#clDiff');
+    if (isNaN(c)) { diff.textContent = '–'; diff.className = ''; }
+    else { var d = round2(c - expected); diff.textContent = d === 0 ? 'ঠিক মিলেছে' : (d < 0 ? 'কম ' : 'বেশি ') + money(Math.abs(d)); diff.className = d === 0 ? 'ok' : (d < 0 ? 'bad' : 'warn'); }
+  }
+  POST.closing = drawClosing;
+
+  /* ----- shop settings ----- */
+  VIEWS.shop = function () {
+    var s = meta.shops.filter(function (x) { return x.id === meta.active; })[0];
+    var h = subtop('দোকান ও ব্যাকআপ');
+    h += '<form class="card" id="shopForm" novalidate><h3>দোকানের তথ্য</h3><div class="logoprev"><span class="logo" id="logoPrev">' + (s.logo ? '<img src="' + esc(s.logo) + '" alt="">' : esc((s.name || 'দ').charAt(0))) + '</span><div class="field" style="flex:1"><label for="logoFile">লোগো (ছবি বাছুন)</label><input id="logoFile" type="file" accept="image/*" style="height:auto;padding:8px"></div></div>' +
+      (s.logo ? '<button type="button" class="x" data-act="logo-del">লোগো সরান</button>' : '') +
+      fld('sh-name', 'দোকানের নাম', 'maxlength="60"', s.name) + fld('sh-addr', 'ঠিকানা', 'maxlength="100"', s.addr || '') + fld('sh-phone', 'ফোন', 'inputmode="tel" maxlength="20"', s.phone || '') +
+      '<p class="err" id="shErr" role="alert" hidden></p><button type="submit" class="btn">সংরক্ষণ করুন</button></form>';
+    h += '<div class="list"><div class="list-h">আমার দোকানগুলো</div>' + meta.shops.map(function (x) {
+      return '<button type="button" class="row" data-act="switch-shop" data-id="' + esc(x.id) + '"><span class="m"><b>' + esc(x.name) + (x.sample ? '<span class="tag">নমুনা</span>' : '') + (x.id === meta.active ? '<span class="tag">চলছে</span>' : '') + '</b><small>' + esc(x.addr || '') + '</small></span><span class="r">' + (x.id === meta.active ? '' : 'খুলুন') + '</span></button>';
+    }).join('') + '</div><button type="button" class="btn ghost" data-act="add-shop">নতুন দোকান যোগ করুন</button>';
+    if (meta.shops.length > 1) h += '<button type="button" class="btn ghost danger" data-act="del-shop">এই দোকান মুছুন</button>';
+    h += '<div class="card"><h3>ব্যাকআপ</h3><p class="note">তথ্য শুধু এই ফোনের ব্রাউজারে থাকে। ব্রাউজারের ডেটা মুছলে বা অ্যাপ আনইনস্টল করলে হারিয়ে যাবে। নিয়মিত নিচের লেখা কপি করে নিজের কাছে (যেমন নোটসে) রাখুন।</p>' +
+      '<div class="field"><label for="bk">সব দোকানের ব্যাকআপ</label><textarea id="bk" class="pre" rows="3" readonly></textarea></div><button type="button" class="btn" data-act="copy-backup">ব্যাকআপ কপি করুন</button></div>' +
+      '<div class="card"><h3>ব্যাকআপ থেকে ফিরিয়ে আনুন</h3><p class="note">এতে বর্তমান সব তথ্য বদলে যাবে।</p><div class="field"><label for="rs">ব্যাকআপের লেখা পেস্ট করুন</label><textarea id="rs" class="pre" rows="3"></textarea></div><p class="err" id="rsErr" role="alert" hidden></p><button type="button" class="btn ghost" data-act="restore">ফিরিয়ে আনুন</button></div>';
+    return h;
+  };
+  POST.shop = function () { var t = $('#bk'); if (t) t.value = JSON.stringify({ v: 1, meta: meta, data: ALL }); };
+
+  /* ----- cart (sale and purchase) ----- */
+  function cartTotals() {
+    var sub = sumBy(cart.items, function (i) { return (parseNum(i.qty) || 0) * (parseNum(i.price) || 0); });
+    var disc = parseNum(cart.disc); disc = isNaN(disc) ? 0 : Math.max(0, disc);
+    var total = Math.max(0, round2(sub - disc));
+    return { sub: sub, disc: disc, total: total };
+  }
+  VIEWS.cart = function () {
+    var isS = cart.mode === 'sale', t = T();
+    var parties = isS ? D.customers : D.suppliers;
+    var h = subtop(isS ? 'নতুন বিক্রি' : 'নতুন ক্রয়');
+    h += '<div class="card"><div class="field"><label for="ps">পণ্য খুঁজুন (নাম বা বারকোড)</label><input id="ps" type="search" autocomplete="off" placeholder="যেমন: চাল"></div><div id="pres"></div></div>';
+    h += '<div class="list"><div class="list-h"><span id="cartHead"></span></div><div id="cartItems"></div></div>';
+    h += '<div class="card"><div class="field"><label for="cp">' + (isS ? 'কাস্টমার' : 'সাপ্লায়ার') + '</label><select id="cp"><option value="">' + (isS ? 'নগদ কাস্টমার (নাম ছাড়া)' : 'সাপ্লায়ার ছাড়া') + '</option>' +
+      parties.map(function (p) { return '<option value="' + esc(p.id) + '"' + (cart.party === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select></div>' +
+      '<button type="button" class="x" data-act="cart-newparty" style="justify-self:start">+ নতুন ' + (isS ? 'কাস্টমার' : 'সাপ্লায়ার') + ' যোগ করুন</button>' +
+      '<div class="row2">' + fld('cd', 'ছাড় (টাকা)', 'inputmode="decimal"', cart.disc) + '<div class="field"><label for="cdate">তারিখ</label><input id="cdate" type="date" max="' + t + '" value="' + esc(cart.date) + '"></div></div>' +
+      '<div id="ctot"></div>' + fld('cpaid', isS ? 'কত টাকা পেলেন' : 'কত টাকা দিলেন', 'inputmode="decimal"', cart.paid) +
+      '<div class="btnrow"><button type="button" class="btn ghost small" data-act="paid-full">পুরো টাকা</button><button type="button" class="btn ghost small" data-act="paid-none">সবটাই বাকি</button></div>' +
+      (!isS ? '<label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="upd" ' + (cart.upd ? 'checked' : '') + ' style="width:22px;height:22px"> পণ্যের ক্রয়মূল্য নতুন দামে বদলে দিন</label>' : '') +
+      '<p class="err" id="cartErr" role="alert" hidden></p>' +
+      '<button type="button" class="btn" data-act="cart-save">' + (isS ? 'বিক্রি সম্পন্ন করুন' : 'ক্রয় সংরক্ষণ করুন') + '</button><button type="button" class="btn ghost" data-act="cart-cancel">বাতিল</button></div>';
+    return h;
+  };
+  POST.cart = function () { drawResults(); drawCart(); };
+  function drawResults() {
+    var el = $('#pres'); if (!el) return;
+    var q = ($('#ps').value || '').trim().toLowerCase(), isS = cart.mode === 'sale', list;
+    if (q) list = D.products.filter(function (p) { return p.name.toLowerCase().indexOf(q) >= 0 || String(p.barcode || '') === q; }).slice(0, 8);
+    else if (isS) { var idx = salesIndex(D, addDays(T(), -29)); list = D.products.slice().sort(function (a, b) { return ((idx[b.id] || {}).units || 0) - ((idx[a.id] || {}).units || 0); }).slice(0, 6); }
+    else list = D.products.slice().sort(function (a, b) { return (a.stock - a.min) - (b.stock - b.min); }).slice(0, 6);
+    if (!D.products.length) { el.innerHTML = '<p class="note">আগে পণ্য যোগ করুন (পণ্য ট্যাব)।</p>'; return; }
+    if (!list.length) { el.innerHTML = '<p class="note">কিছু পাওয়া যায়নি।</p>'; return; }
+    el.innerHTML = (q ? '' : '<p class="note">' + (isS ? 'বেশি বিক্রি হয় এমন পণ্য:' : 'স্টক কম এমন পণ্য:') + '</p>') + '<div class="pick">' + list.map(function (p) {
+      return '<button type="button" data-act="cart-add" data-id="' + esc(p.id) + '"><b>' + esc(p.name) + '</b><small>' + money(isS ? p.sell : p.buy) + ' · স্টক ' + num(p.stock) + '</small></button>';
+    }).join('') + '</div>';
+  }
+  function drawCart() {
+    var isS = cart.mode === 'sale', el = $('#cartItems'); if (!el) return;
+    $('#cartHead').textContent = cart.items.length ? 'কার্টে ' + fmt(cart.items.length) + 'টি পণ্য' : 'কার্ট';
+    if (!cart.items.length) el.innerHTML = '<div class="empty"><p>উপরে থেকে পণ্য বেছে নিন।</p></div>';
+    else el.innerHTML = cart.items.map(function (it, i) {
+      var p = prod(it.pid), q = parseNum(it.qty) || 0, warn = isS && p && q > p.stock;
+      return '<div class="item"><div class="h"><b>' + esc(it.name) + '</b><button type="button" class="x" data-act="cart-del" data-i="' + i + '">সরান</button></div>' +
+        '<div class="ctl"><div class="field"><label for="pr' + i + '">' + (isS ? 'বিক্রয়মূল্য' : 'ক্রয়মূল্য') + ' (প্রতি ' + esc(unitOf(p)) + ')</label><input id="pr' + i + '" data-i="' + i + '" data-f="price" inputmode="decimal" value="' + esc(it.price) + '"></div>' +
+        '<div class="stepper"><button type="button" data-act="cart-qty" data-i="' + i + '" data-d="-1" aria-label="কমান">−</button><input id="qt' + i + '" data-i="' + i + '" data-f="qty" inputmode="decimal" aria-label="পরিমাণ" value="' + esc(it.qty) + '"><button type="button" data-act="cart-qty" data-i="' + i + '" data-d="1" aria-label="বাড়ান">+</button></div></div>' +
+        '<div class="sumrow"><span class="note">' + (warn ? '<span class="warn">স্টকে আছে মাত্র ' + num(p.stock) + '</span>' : (isS && p ? 'লাভ ' + money(((parseNum(it.price) || 0) - p.buy) * q) : '')) + '</span><b id="lt' + i + '">' + money(q * (parseNum(it.price) || 0)) + '</b></div></div>';
+    }).join('');
+    drawTotals();
+  }
+  function drawTotals() {
+    var tt = cartTotals(), isS = cart.mode === 'sale';
+    if (!cart.touched) { cart.paid = tt.total ? toBn(String(tt.total)) : ''; var pe = $('#cpaid'); if (pe) pe.value = cart.paid; }
+    var paid = parseNum($('#cpaid') ? $('#cpaid').value : cart.paid), due = round2(tt.total - (isNaN(paid) ? 0 : paid));
+    var el = $('#ctot'); if (!el) return;
+    el.innerHTML = '<div class="sumrow"><span>মোট দাম</span><span>' + money(tt.sub) + '</span></div>' + (tt.disc ? '<div class="sumrow"><span>ছাড়</span><span>−' + money(tt.disc) + '</span></div>' : '') +
+      '<div class="sumrow big"><span>' + (isS ? 'মোট পাওনা' : 'মোট দেনা') + '</span><span>' + money(tt.total) + '</span></div>' +
+      (due > 0 ? '<div class="sumrow bad"><b>বাকি থাকছে</b><b>' + money(due) + '</b></div>' : (due < 0 ? '<div class="sumrow warn"><b>বেশি দেওয়া হয়েছে</b><b>' + money(-due) + '</b></div>' : ''));
+    el.querySelectorAll('.sumrow.bad').forEach(function (n) { n.style.color = 'var(--bad)'; });
+  }
+  function addToCart(pid) {
+    var p = prod(pid); if (!p) return;
+    var ex = cart.items.filter(function (i) { return i.pid === pid; })[0];
+    if (ex) ex.qty = toBn(String((parseNum(ex.qty) || 0) + 1));
+    else cart.items.push({ pid: pid, name: p.name, qty: '১', price: toBn(String(cart.mode === 'sale' ? p.sell : p.buy)) });
+    var s = $('#ps'); if (s) { s.value = ''; }
+    drawResults(); drawCart();
+  }
+  function startCart(mode, party, items) {
+    cart = { mode: mode, items: items || [], party: party || '', disc: '', paid: '', touched: false, date: T(), upd: true };
+    go('cart');
+  }
+  function cartSave() {
+    var isS = cart.mode === 'sale', err = $('#cartErr');
+    function bad(m) { err.textContent = m; err.hidden = false; err.scrollIntoView({ block: 'nearest' }); }
+    cart.party = $('#cp').value; cart.date = $('#cdate').value || T();
+    if (!parseISO(cart.date)) return bad('তারিখ বেছে নিন।');
+    if (!cart.items.length) return bad('অন্তত একটি পণ্য যোগ করুন।');
+    var items = [], i, q, pr;
+    for (i = 0; i < cart.items.length; i++) {
+      q = parseNum(cart.items[i].qty); pr = parseNum(cart.items[i].price);
+      if (isNaN(q) || q <= 0) return bad('"' + cart.items[i].name + '"-এর পরিমাণ ০-এর বেশি লিখুন।');
+      if (isNaN(pr) || pr < 0) return bad('"' + cart.items[i].name + '"-এর দাম সংখ্যায় লিখুন।');
+      var p = prod(cart.items[i].pid);
+      items.push(isS ? { pid: cart.items[i].pid, name: cart.items[i].name, qty: q, price: pr, cost: p ? p.buy : 0 } : { pid: cart.items[i].pid, name: cart.items[i].name, qty: q, cost: pr });
+    }
+    var sub = sumBy(items, function (x) { return x.qty * (isS ? x.price : x.cost); });
+    var disc = parseNum($('#cd').value); disc = isNaN(disc) ? 0 : Math.max(0, disc);
+    if (disc > sub) return bad('ছাড় মোট দামের চেয়ে বেশি হতে পারে না।');
+    var total = round2(sub - disc), paid = parseNum($('#cpaid').value);
+    if (isNaN(paid)) paid = 0;
+    if (paid < 0) return bad('টাকার পরিমাণ ঠিক করুন।');
+    if (paid > total) return bad('পরিশোধ মোটের চেয়ে বেশি হতে পারে না।');
+    if (total - paid > 0 && !cart.party) return bad('বাকি রাখতে হলে ' + (isS ? 'কাস্টমার' : 'সাপ্লায়ার') + ' বেছে নিন।');
+    var pn = cart.party ? (isS ? cust(cart.party) : supp(cart.party)).name : '';
+    var rec = { id: uid(), ts: Date.now(), date: cart.date, party: cart.party, partyName: pn, items: items, disc: disc, total: total, paid: paid };
+    if (isS) {
+      items.forEach(function (it) { var pp = prod(it.pid); if (pp) pp.stock = round2(pp.stock - it.qty); });
+      D.sales.push(rec);
+    } else {
+      var upd = $('#upd') && $('#upd').checked;
+      items.forEach(function (it) { var pp = prod(it.pid); if (pp) { pp.stock = round2(pp.stock + it.qty); if (upd) pp.buy = it.cost; } });
+      D.purchases.push(rec);
+    }
+    save(); var tot = total; cart = null;
+    ui.hist = []; ui.view = isS ? 'sell' : 'purchases'; ui.p = {};
+    render(); window.scrollTo(0, 0); toast((isS ? 'বিক্রি লেখা হয়েছে: ' : 'ক্রয় লেখা হয়েছে: ') + money(tot));
+  }
+
+  /* ================= sheets ================= */
+  var sheetSubmit = null, lastFocus = null;
+  function openSheet(title, body, submit, okText, noForm) {
+    lastFocus = document.activeElement; sheetSubmit = submit;
+    sheetRoot.innerHTML = '<div class="scrim" data-close></div><form class="sheet" id="sheetForm" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" novalidate><h2 id="sheetTitle">' + title + '</h2>' + body + '<p class="err" id="sheetErr" role="alert" hidden></p>' +
+      '<div class="sheet-actions"><button type="button" class="btn ghost" data-close>' + (submit ? 'বাতিল' : 'বন্ধ করুন') + '</button>' + (submit ? '<button type="submit" class="btn">' + (okText || 'সংরক্ষণ') + '</button>' : '') + '</div></form>';
+    var f = sheetRoot.querySelector('input:not([type=file])'); if (f && submit) f.focus();
+  }
+  function closeSheet() { sheetRoot.innerHTML = ''; sheetSubmit = null; if (lastFocus && document.body.contains(lastFocus)) { try { lastFocus.focus(); } catch (e) { /* ignore */ } } }
+  function sErr(m) { var e = $('#sheetErr'); e.textContent = m; e.hidden = false; }
+  sheetRoot.addEventListener('click', function (e) { if (e.target.closest('[data-close]')) closeSheet(); });
+  sheetRoot.addEventListener('submit', function (e) { e.preventDefault(); if (sheetSubmit) sheetSubmit(e.target); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheetSubmit !== null) closeSheet(); });
+
+  function marginTxt(buy, sell) {
+    if (isNaN(buy) || isNaN(sell)) return 'ক্রয়মূল্য ও বিক্রয়মূল্য লিখলে লাভ দেখাবে।';
+    var pr = round2(sell - buy);
+    return 'প্রতি ইউনিটে লাভ ' + money(pr) + (buy > 0 ? ' · ক্রয়মূল্যের ' + fmt(round2(pr / buy * 100), 1) + '%' : '') + (sell > 0 ? ' · বিক্রয়মূল্যের ' + fmt(round2(pr / sell * 100), 1) + '%' : '');
+  }
+  function productSheet(id) {
+    var p = id ? prod(id) : null;
+    var cats = '<option value="">ক্যাটাগরি ছাড়া</option>' + D.cats.map(function (c) { return '<option value="' + esc(c) + '"' + (p && p.cat === c ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('');
+    var body = fld('pf-name', 'পণ্যের নাম', 'maxlength="80"', p ? p.name : '') +
+      '<div class="row2"><div class="field"><label for="pf-cat">ক্যাটাগরি</label><select id="pf-cat">' + cats + '</select></div>' + fld('pf-newcat', 'বা নতুন ক্যাটাগরি', 'maxlength="40"') + '</div>' +
+      '<div class="row2">' + fld('pf-unit', 'একক (কেজি, পিস…)', 'maxlength="15"', p ? p.unit : 'পিস') + fld('pf-barcode', 'বারকোড (না থাকলেও চলবে)', 'inputmode="numeric" maxlength="30"', p ? p.barcode : '') + '</div>' +
+      '<div class="row2">' + fld('pf-buy', 'ক্রয়মূল্য', 'inputmode="decimal"', p ? toBn(p.buy) : '') + fld('pf-sell', 'বিক্রয়মূল্য', 'inputmode="decimal"', p ? toBn(p.sell) : '') + '</div>' +
+      '<p class="note" id="pf-margin"></p><div class="row2">' + fld('pf-mk', 'লাভ % দিয়ে বিক্রয়মূল্য ঠিক করুন', 'inputmode="decimal"') + '<button type="button" class="btn ghost small" id="pf-apply" style="align-self:end">দাম বসান</button></div>' +
+      '<div class="row2">' + (p ? '<div class="field"><label>বর্তমান স্টক</label><div style="display:flex;gap:8px;align-items:center"><b>' + num(p.stock) + ' ' + esc(unitOf(p)) + '</b><button type="button" class="btn ghost small" id="pf-adj">স্টক ঠিক করুন</button></div></div>' : fld('pf-stock', 'শুরুর স্টক', 'inputmode="decimal"', '')) +
+      fld('pf-min', 'এর নিচে নামলে সতর্ক করুন', 'inputmode="decimal"', p ? toBn(p.min) : '') + '</div>' +
+      (p ? '<button type="button" class="btn ghost danger" id="pf-del">পণ্য মুছুন</button>' : '');
+    openSheet(p ? 'পণ্য বদলান' : 'নতুন পণ্য', body, function (f) {
+      var name = f.querySelector('#pf-name').value.trim(); if (!name) return sErr('পণ্যের নাম লিখুন।');
+      var buy = parseNum(f.querySelector('#pf-buy').value), sell = parseNum(f.querySelector('#pf-sell').value);
+      if (isNaN(buy) || buy < 0) return sErr('ক্রয়মূল্য সংখ্যায় লিখুন, না জানলে ০।');
+      if (isNaN(sell) || sell < 0) return sErr('বিক্রয়মূল্য সংখ্যায় লিখুন।');
+      var min = parseNum(f.querySelector('#pf-min').value); if (isNaN(min) || min < 0) min = 0;
+      var stock = p ? p.stock : parseNum(f.querySelector('#pf-stock').value); if (isNaN(stock)) stock = 0;
+      var bc = f.querySelector('#pf-barcode').value.trim();
+      if (bc && D.products.some(function (x) { return x.barcode === bc && (!p || x.id !== p.id); })) return sErr('এই বারকোড অন্য পণ্যে আছে।');
+      var nc = f.querySelector('#pf-newcat').value.trim(), cat = nc || f.querySelector('#pf-cat').value;
+      if (nc && D.cats.indexOf(nc) < 0) D.cats.push(nc);
+      var rec = p || { id: uid(), created: T() };
+      rec.name = name; rec.cat = cat; rec.unit = f.querySelector('#pf-unit').value.trim() || 'পিস'; rec.barcode = bc; rec.buy = buy; rec.sell = sell; rec.min = min; rec.stock = stock;
+      if (!p) D.products.push(rec);
+      save(); closeSheet(); render(); toast(p ? 'পণ্য বদলানো হয়েছে' : 'পণ্য যোগ হয়েছে');
+    });
+    var upd = function () { $('#pf-margin').textContent = marginTxt(parseNum($('#pf-buy').value), parseNum($('#pf-sell').value)); };
+    upd();
+    $('#pf-buy').addEventListener('input', upd); $('#pf-sell').addEventListener('input', upd);
+    $('#pf-apply').addEventListener('click', function () {
+      var b = parseNum($('#pf-buy').value), m = parseNum($('#pf-mk').value);
+      if (isNaN(b) || b <= 0 || isNaN(m)) return sErr('আগে ক্রয়মূল্য ও লাভের শতাংশ লিখুন।');
+      $('#pf-sell').value = toBn(String(Math.ceil(b * (1 + m / 100)))); $('#sheetErr').hidden = true; upd();
+    });
+    if (p) {
+      $('#pf-adj').addEventListener('click', function () { adjustSheet(p.id); });
+      $('#pf-del').addEventListener('click', function (e) {
+        confirmTwice(e.target, 'delp', 'পণ্য মুছুন', function () { D.products = D.products.filter(function (x) { return x.id !== p.id; }); save(); closeSheet(); render(); toast('পণ্য মোছা হয়েছে'); });
+      });
+    }
+  }
+  function adjustSheet(id) {
+    var p = prod(id);
+    openSheet('স্টক ঠিক করুন', '<p class="note">' + esc(p.name) + ': এখন হিসাবে আছে ' + num(p.stock) + ' ' + esc(unitOf(p)) + '</p>' + fld('ad-new', 'গুনে এখন পেলাম', 'inputmode="decimal"', toBn(p.stock)) +
+      '<div class="field"><label for="ad-why">কারণ</label><select id="ad-why"><option>গুনে পার্থক্য পেলাম</option><option>নষ্ট বা মেয়াদোত্তীর্ণ</option><option>ফেরত</option><option>অন্য কারণ</option></select></div>', function (f) {
+      var n = parseNum(f.querySelector('#ad-new').value); if (isNaN(n)) return sErr('সংখ্যায় লিখুন।');
+      D.adjusts.push({ id: uid(), ts: Date.now(), pid: p.id, from: p.stock, to: n, why: f.querySelector('#ad-why').value });
+      p.stock = n; save(); closeSheet(); render(); toast('স্টক ঠিক করা হয়েছে');
+    });
+  }
+  function partySheet(kind, id, done) {
+    var isC = kind === 'cust', x = id ? (isC ? cust(id) : supp(id)) : null;
+    openSheet((x ? '' : 'নতুন ') + (isC ? 'কাস্টমার' : 'সাপ্লায়ার'), fld('pt-name', 'নাম', 'maxlength="60"', x ? x.name : '') + fld('pt-phone', 'ফোন নম্বর', 'inputmode="tel" maxlength="20"', x ? x.phone : '') + fld('pt-addr', 'ঠিকানা', 'maxlength="100"', x ? x.addr : '') + (x ? '<button type="button" class="btn ghost danger" id="pt-del">মুছুন</button>' : ''), function (f) {
+      var name = f.querySelector('#pt-name').value.trim(); if (!name) return sErr('নাম লিখুন।');
+      var rec = x || { id: uid() };
+      rec.name = name; rec.phone = f.querySelector('#pt-phone').value.trim(); rec.addr = f.querySelector('#pt-addr').value.trim();
+      if (!x) (isC ? D.customers : D.suppliers).push(rec);
+      save(); closeSheet(); if (done) done(rec); else render(); toast('সংরক্ষণ হয়েছে');
+    });
+    if (x) $('#pt-del').addEventListener('click', function (e) {
+      confirmTwice(e.target, 'delpt', 'মুছুন', function () {
+        if (isC) D.customers = D.customers.filter(function (c) { return c.id !== x.id; }); else D.suppliers = D.suppliers.filter(function (c) { return c.id !== x.id; });
+        save(); closeSheet(); ui.view = 'people'; ui.hist = []; render(); toast('মোছা হয়েছে');
+      });
+    });
+  }
+  function paySheet(id) {
+    var isC = ui.view === 'cust', who = isC ? cust(id) : supp(id), t = T();
+    openSheet(isC ? 'টাকা পেলাম' : 'টাকা দিলাম', '<p class="note">' + esc(who.name) + '</p>' + fld('py-amt', 'টাকার পরিমাণ', 'inputmode="decimal"') + '<div class="field"><label for="py-date">তারিখ</label><input id="py-date" type="date" max="' + t + '" value="' + t + '"></div>' + fld('py-note', 'নোট (না দিলেও চলবে)', 'maxlength="80"'), function (f) {
+      var a = parseNum(f.querySelector('#py-amt').value), dt = f.querySelector('#py-date').value;
+      if (isNaN(a) || a <= 0) return sErr('টাকার পরিমাণ সংখ্যায় লিখুন।');
+      if (!parseISO(dt)) return sErr('তারিখ বেছে নিন।');
+      D.payments.push({ id: uid(), ts: Date.now(), date: dt, kind: isC ? 'cust' : 'supp', party: id, partyName: who.name, amt: a, note: f.querySelector('#py-note').value.trim() });
+      save(); closeSheet(); render(); toast('লেখা হয়েছে');
+    });
+  }
+  function detailSheet(kind, id) {
+    var isS = kind === 'sale', x = (isS ? D.sales : D.purchases).filter(function (s) { return s.id === id; })[0]; if (!x) return;
+    var due = round2(x.total - x.paid);
+    var body = '<p class="note">' + dateTxt(x.date) + ' ' + timeTxt(x.ts) + ' · ' + esc(x.partyName || (isS ? 'নগদ কাস্টমার' : 'সাপ্লায়ার ছাড়া')) + (x.void ? ' · <b>বাতিল</b>' : '') + '</p><div class="list">' +
+      x.items.map(function (i) { return '<div class="row"><span class="m"><b>' + esc(i.name) + '</b><small>' + num(i.qty) + ' × ' + money(isS ? i.price : i.cost) + '</small></span><span class="r">' + money(i.qty * (isS ? i.price : i.cost)) + '</span></div>'; }).join('') + '</div>' +
+      (x.disc ? '<div class="sumrow"><span>ছাড়</span><span>−' + money(x.disc) + '</span></div>' : '') + '<div class="sumrow big"><span>মোট</span><span>' + money(x.total) + '</span></div>' +
+      '<div class="sumrow"><span>' + (isS ? 'পেয়েছি' : 'দিয়েছি') + '</span><span>' + money(x.paid) + '</span></div>' + (due > 0 ? '<div class="sumrow bad" style="color:var(--bad)"><b>বাকি</b><b>' + money(due) + '</b></div>' : '') +
+      (isS && !x.void ? '<div class="sumrow"><span>এই বিক্রিতে লাভ</span><b class="ok">' + money(saleProfit(x)) + '</b></div>' : '') + (!x.void ? '<button type="button" class="btn ghost danger" id="vd">বাতিল করুন (স্টক ফেরত যাবে)</button>' : '');
+    openSheet(isS ? 'বিক্রির বিবরণ' : 'ক্রয়ের বিবরণ', body, null);
+    var v = $('#vd'); if (v) v.addEventListener('click', function (e) {
+      confirmTwice(e.target, 'void' + id, 'বাতিল করুন (স্টক ফেরত যাবে)', function () {
+        x.void = true;
+        x.items.forEach(function (it) { var p = prod(it.pid); if (p) p.stock = round2(p.stock + (isS ? it.qty : -it.qty)); });
+        save(); closeSheet(); render(); toast('বাতিল করা হয়েছে');
+      });
+    });
+  }
+  function catSheet(name) {
+    openSheet('ক্যাটাগরি বদলান', fld('ct-name', 'নাম', 'maxlength="40"', name) + '<button type="button" class="btn ghost danger" id="ct-del">মুছুন (পণ্য থাকবে)</button>', function (f) {
+      var n = f.querySelector('#ct-name').value.trim(); if (!n) return sErr('নাম লিখুন।');
+      if (n !== name && D.cats.indexOf(n) >= 0) return sErr('এই নামে ক্যাটাগরি আছে।');
+      D.cats[D.cats.indexOf(name)] = n; D.products.forEach(function (p) { if (p.cat === name) p.cat = n; });
+      save(); closeSheet(); render();
+    });
+    $('#ct-del').addEventListener('click', function (e) {
+      confirmTwice(e.target, 'delct', 'মুছুন (পণ্য থাকবে)', function () {
+        D.cats = D.cats.filter(function (c) { return c !== name; }); D.products.forEach(function (p) { if (p.cat === name) p.cat = ''; });
+        save(); closeSheet(); render(); toast('ক্যাটাগরি মোছা হয়েছে');
+      });
+    });
+  }
+
+  /* ================= shops ================= */
+  function newShop(name, sample) {
+    var id = uid(); meta.shops.push({ id: id, name: name, addr: '', phone: '', logo: '', sample: !!sample });
+    ALL[id] = sample ? makeSample() : ensureData({}); meta.active = id; D = ALL[id];
+    dirty[id] = true; save();
+  }
+  function switchShop(id) { if (!ALL[id]) return; meta.active = id; D = ALL[id]; save(); cart = null; ui.hist = []; ui.view = 'home'; ui.p = {}; render(); window.scrollTo(0, 0); }
+  function shrink(file, cb) {
+    var rd = new FileReader();
+    rd.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var s = 128, c = document.createElement('canvas'); c.width = s; c.height = s;
+        var x = c.getContext('2d'), m = Math.min(img.width, img.height), sx = (img.width - m) / 2, sy = (img.height - m) / 2;
+        x.drawImage(img, sx, sy, m, m, 0, 0, s, s);
+        try { cb(c.toDataURL('image/jpeg', 0.82)); } catch (e) { cb(''); }
+      };
+      img.onerror = function () { cb(''); };
+      img.src = rd.result;
+    };
+    rd.onerror = function () { cb(''); };
+    rd.readAsDataURL(file);
+  }
+
+  /* ================= events ================= */
+  app.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.id === 'q') { ui.q = t.value; $('#listArea').innerHTML = productList(); }
+    else if (t.id === 'pq') { ui.pq = t.value; $('#listArea').innerHTML = peopleList(); }
+    else if (t.id === 'ps') drawResults();
+    else if (t.id === 'cd') drawTotals();
+    else if (t.id === 'cpaid') { cart.touched = true; cart.paid = t.value; drawTotals(); }
+    else if (t.getAttribute && t.getAttribute('data-f')) {
+      var i = +t.getAttribute('data-i'), f = t.getAttribute('data-f'); cart.items[i][f] = t.value;
+      var q = parseNum(cart.items[i].qty) || 0, pr = parseNum(cart.items[i].price) || 0, lt = $('#lt' + i); if (lt) lt.textContent = money(q * pr);
+      drawTotals();
+    }
+    else if (t.id === 'ro-lead' || t.id === 'ro-cover') {
+      var v = parseNum(t.value); if (!isNaN(v) && v > 0) { D.settings[t.id === 'ro-lead' ? 'lead' : 'cover'] = v; save(); }
+    }
+    else if (t.id === 'cl-open' || t.id === 'cl-count') updateClosing();
+  });
+  app.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.id === 'cl-date') { ui.p.date = t.value; drawClosing(); }
+    else if (t.id === 'cp') cart.party = t.value;
+    else if (t.id === 'upd') cart.upd = t.checked;
+    else if (t.id === 'cdate') cart.date = t.value;
+    else if (t.id === 'logoFile' && t.files && t.files[0]) {
+      shrink(t.files[0], function (data) {
+        if (!data) return toast('ছবিটি পড়া যায়নি');
+        var s = meta.shops.filter(function (x) { return x.id === meta.active; })[0]; s.logo = data; save(); render(); toast('লোগো বসানো হয়েছে');
+      });
+    }
+  });
+  app.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.id === 'ps') {
+      e.preventDefault();
+      var q = e.target.value.trim().toLowerCase(); if (!q) return;
+      var hit = D.products.filter(function (p) { return String(p.barcode || '') === q; });
+      if (!hit.length) { var m = D.products.filter(function (p) { return p.name.toLowerCase().indexOf(q) >= 0; }); if (m.length === 1) hit = m; }
+      if (hit.length) addToCart(hit[0].id); else toast('পণ্য পাওয়া যায়নি');
+    }
+  });
+  app.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = e.target.id;
+    if (f === 'expForm') {
+      var a = parseNum($('#ex-amt').value), dt = $('#ex-date').value, er = $('#exErr');
+      if (isNaN(a) || a <= 0) { er.textContent = 'টাকার পরিমাণ সংখ্যায় লিখুন।'; er.hidden = false; return; }
+      if (!parseISO(dt)) { er.textContent = 'তারিখ বেছে নিন।'; er.hidden = false; return; }
+      D.expenses.push({ id: uid(), ts: Date.now(), date: dt, cat: expCat, amt: a, note: $('#ex-note').value.trim() });
+      save(); render(); toast('খরচ লেখা হয়েছে');
+    } else if (f === 'catForm') {
+      var n = $('#cat-new').value.trim(), ce = $('#catErr');
+      if (!n) { ce.textContent = 'নাম লিখুন।'; ce.hidden = false; return; }
+      if (D.cats.indexOf(n) >= 0) { ce.textContent = 'এই নামে ক্যাটাগরি আছে।'; ce.hidden = false; return; }
+      D.cats.push(n); save(); render(); toast('ক্যাটাগরি যোগ হয়েছে');
+    } else if (f === 'shopForm') {
+      var nm = $('#sh-name').value.trim(), se = $('#shErr');
+      if (!nm) { se.textContent = 'দোকানের নাম লিখুন।'; se.hidden = false; return; }
+      var s = meta.shops.filter(function (x) { return x.id === meta.active; })[0];
+      s.name = nm; s.addr = $('#sh-addr').value.trim(); s.phone = $('#sh-phone').value.trim(); save(); render(); toast('সংরক্ষণ হয়েছে');
+    }
+  });
+  nav.addEventListener('click', function (e) { var b = e.target.closest('[data-act="tab"]'); if (b) tab(b.getAttribute('data-v')); });
+
+  app.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var act = b.getAttribute('data-act'), id = b.getAttribute('data-id');
+    switch (act) {
+      case 'back': back(); break;
+      case 'tab': tab(b.getAttribute('data-v')); break;
+      case 'go': go(b.getAttribute('data-v')); break;
+      case 'low-stock': ui.pfilter = 'low'; ui.pcat = ''; ui.q = ''; tab('products'); break;
+      case 'new-sale': startCart('sale'); break;
+      case 'new-purchase': startCart('purchase'); break;
+      case 'new-sale-for': startCart('sale', id); break;
+      case 'new-purchase-for': startCart('purchase', id); break;
+      case 'reorder-cart': startCart('purchase', '', reorder(D, T(), D.settings.lead, D.settings.cover).map(function (x) { return { pid: x.p.id, name: x.p.name, qty: toBn(String(x.qty)), price: toBn(String(x.p.buy)) }; })); break;
+      case 'add-product': productSheet(); break;
+      case 'edit-product': productSheet(id); break;
+      case 'pf': ui.pfilter = b.getAttribute('data-f'); ui.pcat = ''; POST.products(); break;
+      case 'pcat': ui.pcat = ui.pcat === b.getAttribute('data-c') ? '' : b.getAttribute('data-c'); ui.pfilter = 'all'; POST.products(); break;
+      case 'pp': ui.people = b.getAttribute('data-k'); ui.pq = ''; render(); break;
+      case 'add-party': partySheet(ui.people); break;
+      case 'open-party': go(ui.people, { id: id }); break;
+      case 'edit-party': partySheet(ui.view, id); break;
+      case 'pay-sheet': paySheet(id); break;
+      case 'del-pay': confirmTwice(b, 'dp' + id, 'মুছুন', function () { D.payments = D.payments.filter(function (p) { return p.id !== id; }); save(); render(); toast('মোছা হয়েছে'); }); break;
+      case 'sale-detail': detailSheet('sale', id); break;
+      case 'purch-detail': detailSheet('purch', id); break;
+      case 'exp-cat': expCat = b.getAttribute('data-c'); $('#expChips').querySelectorAll('.chip').forEach(function (c) { c.setAttribute('aria-pressed', String(c === b)); }); break;
+      case 'del-exp': confirmTwice(b, 'de' + id, 'মুছুন', function () { D.expenses = D.expenses.filter(function (x) { return x.id !== id; }); save(); render(); toast('খরচ মোছা হয়েছে'); }); break;
+      case 'edit-cat': catSheet(b.getAttribute('data-c')); break;
+      case 'ana-kind': ui.anaKind = b.getAttribute('data-k'); render(); break;
+      case 'ana-m': ui.anaMetric = b.getAttribute('data-k'); render(); break;
+      case 'dead-days': ui.deadDays = +b.getAttribute('data-n'); D.settings.dead = ui.deadDays; render(); break;
+      case 'cart-add': addToCart(id); break;
+      case 'cart-del': cart.items.splice(+b.getAttribute('data-i'), 1); cart.touched = cart.touched && cart.items.length > 0; drawCart(); break;
+      case 'cart-qty':
+        var it = cart.items[+b.getAttribute('data-i')], q = (parseNum(it.qty) || 0) + (+b.getAttribute('data-d'));
+        it.qty = toBn(String(Math.max(0, q))); drawCart(); break;
+      case 'cart-newparty': partySheet(cart.mode === 'sale' ? 'cust' : 'supp', null, function (rec) { cart.party = rec.id; render(); }); break;
+      case 'paid-full': cart.touched = false; drawTotals(); break;
+      case 'paid-none': cart.touched = true; cart.paid = '০'; $('#cpaid').value = '০'; drawTotals(); break;
+      case 'cart-save': cartSave(); break;
+      case 'cart-cancel': cart = null; back(); break;
+      case 'save-closing': {
+        var date = $('#cl-date').value || T(), s = closingSummary(D, date), o = parseNum($('#cl-open').value), c = parseNum($('#cl-count').value), er = $('#clErr');
+        if (isNaN(o)) o = 0;
+        if (isNaN(c)) { er.textContent = 'ক্যাশে কত টাকা গুনে পেলেন তা লিখুন।'; er.hidden = false; return; }
+        var expected = round2(o + s.cashIn - s.cashOut), rec = { id: uid(), date: date, opening: o, expected: expected, counted: c, diff: round2(c - expected), sales: s.salesTotal, profit: s.profit, expenses: s.expenses, dueTotal: totalPositive(balances(D).c) };
+        D.closings = D.closings.filter(function (x) { return x.date !== date; }); D.closings.push(rec); save(); render(); toast('ক্লোজিং সংরক্ষণ হয়েছে'); break;
+      }
+      case 'logo-del': meta.shops.filter(function (x) { return x.id === meta.active; })[0].logo = ''; save(); render(); break;
+      case 'switch-shop': if (id !== meta.active) switchShop(id); break;
+      case 'add-shop':
+        openSheet('নতুন দোকান', fld('ns-name', 'দোকানের নাম', 'maxlength="60"'), function (f) {
+          var n = f.querySelector('#ns-name').value.trim(); if (!n) return sErr('নাম লিখুন।');
+          newShop(n, false); closeSheet(); ui.hist = []; ui.view = 'home'; render(); toast('নতুন দোকান তৈরি হয়েছে');
+        }, 'তৈরি করুন'); break;
+      case 'del-shop':
+        confirmTwice(b, 'delshop', 'এই দোকান মুছুন', function () {
+          var gone = meta.active; meta.shops = meta.shops.filter(function (x) { return x.id !== gone; }); delete ALL[gone]; kv.del('data:' + gone);
+          meta.active = meta.shops[0].id; D = ALL[meta.active]; save(); ui.hist = []; ui.view = 'home'; render(); toast('দোকান মোছা হয়েছে');
+        }); break;
+      case 'start-real':
+        confirmTwice(b, 'real', 'নমুনা মুছে নিজের দোকান শুরু করুন', function () {
+          var old = meta.active; meta.shops = meta.shops.filter(function (x) { return x.id !== old; }); delete ALL[old]; kv.del('data:' + old);
+          newShop('আমার দোকান', false); ui.view = 'shop'; ui.hist = [{ view: 'home', p: {} }]; render(); toast('এবার দোকানের নাম বসান');
+        }); break;
+      case 'copy-backup': copyText($('#bk').value, $('#bk')); break;
+      case 'restore': {
+        var raw = $('#rs').value.trim(), er2 = $('#rsErr'), parsed = null;
+        try { parsed = JSON.parse(raw); } catch (x) { parsed = null; }
+        if (!parsed || !parsed.meta || !Array.isArray(parsed.meta.shops) || !parsed.meta.shops.length || !parsed.data) { er2.textContent = 'ব্যাকআপের লেখাটি ঠিক নেই। পুরো লেখা কপি করে পেস্ট করুন।'; er2.hidden = false; return; }
+        er2.hidden = true;
+        confirmTwice(b, 'rs', 'ফিরিয়ে আনুন', function () {
+          Object.keys(ALL).forEach(function (k) { kv.del('data:' + k); });
+          ALL = {}; meta = { shops: [], active: '' };
+          parsed.meta.shops.forEach(function (s) { if (s && s.id && parsed.data[s.id]) { meta.shops.push({ id: String(s.id), name: String(s.name || 'দোকান'), addr: s.addr || '', phone: s.phone || '', logo: typeof s.logo === 'string' ? s.logo : '', sample: !!s.sample }); ALL[s.id] = ensureData(parsed.data[s.id]); dirty[s.id] = true; } });
+          if (!meta.shops.length) { newShop('আমার দোকান', false); }
+          meta.active = ALL[parsed.meta.active] ? parsed.meta.active : meta.shops[0].id; D = ALL[meta.active]; save(); flush(); ui.hist = []; ui.view = 'home'; render(); toast('ব্যাকআপ থেকে ফিরে এসেছে');
+        }); break;
+      }
+    }
+  });
+
+  /* ================= boot ================= */
+  function boot() {
+    kv.open().then(function () { return kv.get('meta'); }).then(function (m) {
+      if (m && Array.isArray(m.shops) && m.shops.length) {
+        meta = m;
+        return Promise.all(m.shops.map(function (s) { return kv.get('data:' + s.id).then(function (d) { ALL[s.id] = ensureData(d); }); }));
+      }
+      meta = { shops: [], active: '' };
+      newShop('নমুনা দোকান', true);
+      meta.shops[0].sample = true;
+      return null;
+    }).then(function () {
+      if (!ALL[meta.active]) meta.active = meta.shops[0].id;
+      D = ALL[meta.active]; ui.deadDays = D.settings.dead || 30;
+      flush(); render();
+    });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
